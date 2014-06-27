@@ -1,0 +1,79 @@
+<?php
+header("Content-type: text/plain");
+if(!defined('DEVELOPER'))exit;
+
+$arr_get = array('type', 'limit', 'page');
+for($i = 0; $i < 3; $i++) if(isset($_GET[$arr_get[$i]])) $$arr_get[$i] = $_GET[$arr_get[$i]]; else $$arr_get[$i] = '';
+
+if($type){
+	$type_allowed = array('atm', 'atp', 'add');
+	if(in_array($type, $type_allowed, true)){
+		if($type == 'atm'){
+			$type = "WHERE `to` <> ''";
+		}elseif($type == 'atp'){
+			$type = "WHERE `id` <> ''";
+		}else{
+			$type = "WHERE `id` = '' AND `from` = ''";
+		}
+	}
+	else die($api->returns('failed', 'Invalid type value'));
+}
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qpart = mysql_query("
+	SELECT `id`, `from`, `to`, `name`, `detail`, `barcode`, `serial_no`, `qty`, `uom`, `material_type`, `note`, `fl_active`
+	FROM `".DB_NAME."`.`".DB_PREFIX."site_part`
+	$type ORDER BY `site_part_id` ASC $Qpage $Qlimit
+");
+if(mysql_num_rows($Qpart)){
+	$i = 0;
+	$dt = '{"result":"success","num_data":"'.mysql_num_rows($Qpart).'","data":[';
+	while($part = mysql_fetch_object($Qpart)){
+		if($i) $dt .= ',';
+		
+		$dt .= '{"type":';
+		if($part->to){
+			$dt .= '"atm","from_site":"'.$part->from.'"';
+		}elseif($part->id){
+			$dt .= '"atp","from_site":"'.$part->id.'"';
+		}else{
+			$dt .= '"add","from_site":""';
+		}
+		
+		$dt .= ',"to_site":"'.$part->to.'"';
+		/*$dt .= ',"to_site":"'.$part->to.'","to_site_neid":[';
+		$Qto_neid = mysql_query("SELECT `neid` FROM `".DB_NAME."`.`".DB_PREFIX."network` WHERE `id`='$part->to'");
+		if(mysql_num_rows($Qto_neid)){
+			$ne = 0;
+			while($to_neid = mysql_fetch_object($Qto_neid)){
+				if($ne) $dt .= ',';
+				$dt .= '"'.$to_neid->neid.'"';
+				$ne = 1;
+			}
+		}*/
+		//$dt .= '],
+		
+		$dt .= ',"name":'.json_encode($part->name).',"detail":'.json_encode($part->detail).',"barcode":'.json_encode($part->barcode).',"serial_no":'.json_encode($part->serial_no).',"qty":"'.$part->qty.'","uom":"'.$part->uom.'","material_type":"'.$part->material_type.'","note":'.json_encode(str_replace('|', '', $part->note)).'}';
+		$i = 1;
+	}
+	$dt .= ']}';
+	echo indent($dt);
+}
+else echo returnjson("nodata", "No data.");
+
+mysql_close();

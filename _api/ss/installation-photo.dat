@@ -1,0 +1,71 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['ss_id']) $ss_id=strip_tags($_POST['ss_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['photo_id']) $photo_id=$_POST['photo_id'];
+if($_POST['image_desc']) $image_desc=$_POST['image_desc'];
+if($_POST['comment']) $comment=$_POST['comment'];
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+if(!$photo_id) die(returnjson("failed", "Required photo_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='ss' AND `idx`='$ss_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+if(mysql_num_rows($Qcheck)){
+	
+	$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+	for($i=0; $i < count($_FILES['image_upload']['name']); $i++){
+		if(isset($_FILES['image_upload']['name'][$i])){
+			
+			$new_file_name = '';
+			
+			if(in_array($_FILES['image_upload']['type'][$i], $file_allowed, true)):
+			$fileext = explode('.', $_FILES['image_upload']['name'][$i]);
+			$file_ext = strtolower(end($fileext));
+			
+			$new_name = date("YmdHms").'_'.rand(100, 999);
+			$new_file_name = $new_name.'.'.$file_ext;
+			
+			$file_path = ROOT.'media/ss/installation/'.$new_file_name;
+			move_uploaded_file($_FILES['image_upload']['tmp_name'][$i], $file_path);
+			
+			if(($file_ext == 'gif')||($file_ext == 'png')){
+				convert_to_jpg($file_path, ROOT.'media/ss/installation/'.$new_name.'.jpg', $file_ext);
+				$new_file_name = $new_name.'.jpg';
+				un_link($file_path);
+			}
+			
+			//if(!file_exists(ROOT.'media/files/'.$new_file_name)) die(returnjson("failed", "Sorry, something went wrong. Please try again!"));
+			
+			$desc = explode('|', $image_desc[$i]);
+			if($new_file_name){
+				mysql_query("DELETE FROM `".DB_NAME."`.`ss_task_photo` WHERE `task_id`='$ss_id' AND `photo_id`='".$photo_id[$i]."'");
+				mysql_query("INSERT INTO `".DB_NAME."`.`ss_task_photo` (`task_id`, `photo_id`, `comment`, `lac`, `cell_id`, `latitude`, `longitude`, `file`) VALUES ('$ss_id', '".$photo_id[$i]."', '".$comment[$i]."', '$desc[2]', '$desc[3]', '$desc[0]', '$desc[1]', '$new_file_name')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+			}
+			
+			endif;
+		}
+	}
+	
+	echo returnjson("success", "Submit Installation photo successfully");
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

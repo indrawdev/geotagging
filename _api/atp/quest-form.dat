@@ -1,0 +1,123 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['image_desc']) $image_desc=$_POST['image_desc'];
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['quest']) $quest=$_POST['quest'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$quest) die(returnjson("failed", "Required quest value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$img = 0;
+	$idx_number = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.');
+	$idx_numbers = array('10.1', '10.2', '10.3', '10.4', '10.5', '10.6', '10.7', '10.8', '10.9', '18.1', '18.2', '18.3', '18.4', '18.5', '18.6', '18.7', '18.8', '18.9');
+	$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+	
+	for($i=0; $i < count($quest); $i++){
+		if(!empty($quest[$i])){
+			//echo $quest[$i].'<hr>';
+			
+			$qcontent=explode('|', $quest[$i]);
+			$schapter=explode('@', $qcontent[0]);
+			//echo $schapter[0].' <==> '.$schapter[1].'<br>';
+			
+			if($schapter[1]){
+				$table = 'atp_subchapter';
+				$table_field = " AND `no_chapter`='".$schapter[1]."' AND `subno_chapter`='".$qcontent[2]."'";
+				$table_fields = " AND `table`='atp_subchapter_no' AND `idx_main`='".$schapter[1]."' AND `idx_sub`='".$qcontent[2]."'";
+			}else{
+				$table = 'atp_chapter';
+				$table_field = " AND `no_chapter`='".$qcontent[2]."'";
+				$table_fields = " AND `table`='atp_chapter_no' AND `idx_main`='".$schapter[0]."' AND `idx_sub`='".$qcontent[2]."'";
+			}
+			
+			$Qctask = mysql_query("SELECT `atp_id` FROM `".DB_NAME."`.`".DB_PREFIX."$table` WHERE `atp_id`='$atp_id' AND `user_id`='$user_id' AND `chapter`='".$schapter[0]."'$table_field") or die(returnjson("failed", "Sorry, could not execute Check Tasking query"));
+			if(mysql_num_rows($Qctask)){
+				
+				mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."$table` WHERE `atp_id`='$atp_id' AND `user_id`='$user_id' AND `chapter`='".$schapter[0]."'$table_field") or die(returnjson("failed", "Sorry, could not execute Delete Tasking query"));
+				
+				mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `user_id`='$user_id' AND `idx`='$atp_id'$table_fields") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+			}
+			
+			$new_file_name = '';
+			if($qcontent[1]=='Yes'){
+				if($_FILES['image_upload']['name'][$img]):
+				if(in_array($_FILES['image_upload']['type'][$img], $file_allowed, true)){
+					$fileext = explode('.', $_FILES['image_upload']['name'][$img]);
+					$file_ext = strtolower(end($fileext));
+					
+					$new_name = date("YmdHms").'_'.rand(100, 999);
+					$new_file_name = $new_name.'.'.$file_ext;
+					
+					$file_path = ROOT.'media/files/'.$new_file_name;
+					move_uploaded_file($_FILES['image_upload']['tmp_name'][$img], $file_path);
+					
+					if(($file_ext == 'gif')||($file_ext == 'png')){
+						convert_to_jpg($file_path, ROOT.'media/files/'.$new_name.'.jpg', $file_ext);
+						$new_file_name = $new_name.'.jpg';
+						un_link($file_path);
+					}
+					
+				}
+				endif;
+			}
+			
+			if(in_array(substr($qcontent[2], 0, 2), $idx_number, true)) $idx_sub_order = '0'.$qcontent[2]; else $idx_sub_order = $qcontent[2];
+			
+			if($schapter[1]) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_subchapter` (`atp_id`, `user_id`, `chapter`, `no_chapter`, `subno_chapter`, `subno_chapter_order`, `content`) VALUES ('$atp_id', '$user_id', '".$schapter[0]."', '".$schapter[1]."', '".$qcontent[2]."', '$idx_sub_order', '".$quest[$i]."')") or die(returnjson("failed", "Sorry, could not execute Insert query")); else mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_chapter` (`atp_id`, `user_id`, `chapter`, `no_chapter`, `content`) VALUES ('$atp_id', '$user_id', '".$schapter[0]."', '".$qcontent[2]."', '".$qcontent[3]."')") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+
+			if(mysql_affected_rows()){
+				
+				if($new_file_name):
+				
+				if($schapter[1]){
+					
+					if(!in_array(substr($schapter[1], 0, 2), $idx_number, true)){
+						if(in_array($schapter[1], $idx_numbers, true)) $idx_main_order = substr($schapter[1], 0, 3).'0'.substr($schapter[1], 3, 1); else $idx_main_order = $schapter[1];
+					}
+					else $idx_main_order = '0'.$schapter[1];
+					
+					mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `idx_main`, `idx_main_order`, `idx_sub`, `idx_sub_order`, `files`, `note`, `timelog`) VALUES ('$user_id', 'atp_subchapter_no', '$atp_id', '".$schapter[1]."', '$idx_main_order', '".$qcontent[2]."', '$idx_sub_order', '$new_file_name', '".$image_desc[$img]."', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+				}else{
+					if(in_array(substr($schapter[0], 0, 2), $idx_number, true)) $idx_main_order = '0'.$schapter[0]; else $idx_main_order = $schapter[0];
+					mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `idx_main`, `idx_main_order`, `idx_sub`, `idx_sub_order`, `files`, `note`, `timelog`) VALUES ('$user_id', 'atp_chapter_no', '$atp_id', '".$schapter[0]."', '$idx_main_order', '".$qcontent[2]."', '$idx_sub_order', '$new_file_name', '".$image_desc[$img]."', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+				}
+				
+				$img++;
+				endif;
+				
+			} else echo returnjson("failed", "Unknown error from server");
+			
+		}
+	}
+	
+	include 'fl_done'.DAT;
+	
+	echo returnjson("success", "Submit quest successfully");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

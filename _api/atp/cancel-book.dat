@@ -1,0 +1,31 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id' AND `fl_active`='0'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id' AND `fl_active`='0'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	
+	if(mysql_affected_rows()) echo returnjson("success", "Cancelling succeeded"); else echo returnjson("failed", "Unknown error from server");
+}
+else echo returnjson("failed", "Not found or the work is over");
+
+mysql_close();

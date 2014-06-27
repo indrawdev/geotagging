@@ -1,0 +1,40 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['note']) $note=$_POST['note'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$note) die(returnjson("failed", "Required note value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."footnote` WHERE `table`='atp' AND `idx`='$atp_id'");
+	
+	for($i=0; $i < count($note); $i++) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."footnote` (`table`, `idx`, `note`) VALUES ('atp', '$atp_id', '".$note[$i]."')");
+	echo returnjson("success", "Submit note successfully");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

@@ -1,0 +1,75 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['cell_id']) $cell_id=strip_tags($_POST['cell_id']);
+if($_POST['lac']) $lac=strip_tags($_POST['lac']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['type']) $type=htmlentities($_POST['type']);
+if($_POST['conf_rbs']) $conf_rbs=htmlentities($_POST['conf_rbs']);
+if($_POST['conf_type']) $conf_type=htmlentities($_POST['conf_type']);
+if($_POST['conf_installed']) $conf_installed=htmlentities($_POST['conf_installed']);
+if($_POST['conf_activated']) $conf_activated=htmlentities($_POST['conf_activated']);
+if($_POST['conf_serial']) $conf_serial=htmlentities($_POST['conf_serial']);
+if($_POST['no_cabinet']) $no_cabinet=htmlentities($_POST['no_cabinet']);
+if($_POST['ip_address']) $ip_address=strip_tags($_POST['ip_address']);
+if($_POST['soft_version']) $soft_version=htmlentities($_POST['soft_version']);
+if($_POST['site_profile']) $site_profile=htmlentities($_POST['site_profile']);
+if($_POST['rbs_topology']) $rbs_topology=htmlentities($_POST['rbs_topology']);
+if($_POST['outstanding']) $outstanding=strip_tags($_POST['outstanding']);
+if($_POST['time_spent']) $time_spent=htmlentities($_POST['time_spent']);
+if($_POST['multiple_site']) $multiple_site=$_POST['multiple_site'];
+if($_POST['doc_ref']) $doc_ref=$_POST['doc_ref'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$cell_id) die(returnjson("failed", "Required cell_id value"));
+
+if(!$lac) die(returnjson("failed", "Required lac value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_form` WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_form` (`atp_id`, `user_id`, `identification_type`, `identification_conf_rbs`, `identification_conf_type`, `identification_conf_installed`, `identification_conf_activated`, `identification_conf_serial`, `identification_no_cabinet`, `identification_ip_address`, `identification_soft_version`, `identification_site_profile`, `identification_rbs_topology`, `outstanding`, `time_spent`) VALUES ('$atp_id', '$user_id', '$type', '$conf_rbs', '$conf_type', '$conf_installed', '$conf_activated', '$conf_serial', '$no_cabinet', '$ip_address', '$soft_version', '$site_profile', '$rbs_topology', '$outstanding', '$time_spent')") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if($multiple_site){
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_forms` WHERE `atp_id`='$atp_id' AND `type`='multiple_site'");
+		for($i=0; $i < count($multiple_site); $i++) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_forms` (`atp_id`, `type`, `note`) VALUES ('$atp_id', 'multiple_site', '".$multiple_site[$i]."')");
+	}
+	
+	if($doc_ref){
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_forms` WHERE `atp_id`='$atp_id' AND `type`='doc_ref'");
+		for($i=0; $i < count($doc_ref); $i++) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_forms` (`atp_id`, `type`, `note`) VALUES ('$atp_id', 'doc_ref', '".$doc_ref[$i]."')");
+	}
+	
+	//if(mysql_affected_rows()){
+		
+		mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `cell_id`='$cell_id', `lac`='$lac' WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Updated query"));
+		include 'fl_done'.DAT;
+		
+		echo returnjson("success", "Submit Equipment Identification successfully");
+	/*}else{
+		echo returnjson("failed", "Unknown error from server");
+	}*/
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

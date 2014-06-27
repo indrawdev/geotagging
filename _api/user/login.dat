@@ -1,0 +1,48 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['imei']) $imei=$_POST['imei'];
+if($_POST['username']) $username=strip_tags($_POST['username']);
+if($_POST['password']) $password=strip_tags($_POST['password']);
+
+if(!$imei) die(returnjson("failed", "Required imei value"));
+if(!$username) die(returnjson("failed", "Required username value"));
+if(!$password) die(returnjson("failed", "Required password value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($imei){
+	$check = mysql_query("SELECT 1 FROM `".DB_NAME."`.`".DB_PREFIX."imei` WHERE `imei_id`='$imei'");
+	if(!mysql_num_rows($check)) die(returnjson("failed", "Sorry, but this device ($imei) is not registered")); //mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."imei` (`imei_id`, `time_entry`) VALUES ('$imei', CURRENT_TIMESTAMP)");
+	/*if(!mysql_num_rows($check)):
+	
+	$total = mysql_query("SELECT 1 FROM `".DB_NAME."`.`".DB_PREFIX."imei`");
+	if(mysql_num_rows($total) > 80) die(returnjson("failed", "Imei exceed limit")); else mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."imei` (`imei_id`, `time_entry`) VALUES ('$imei', CURRENT_TIMESTAMP())");
+	
+	endif;*/
+}
+
+$Qcheck = mysql_query("
+					SELECT a.`user_id`, a.`name`, a.`login_last`, b.`vendor_id`, b.`name` AS `vendor`, c.`name` AS `role`
+					FROM `".DB_NAME."`.`".DB_PREFIX."user` a
+					JOIN `".DB_NAME."`.`".DB_PREFIX."vendor` b ON b.`vendor_id`=a.`vendor_id`
+					JOIN `".DB_NAME."`.`".DB_PREFIX."role` c ON (a.`role_id` = c.`role_id`)
+					WHERE a.`fl_active`=1 AND a.`uname`='$username' AND a.`pswd`='".get_pswd($password)."'") or die(returnjson("failed", "Sorry, could not execute query"));
+
+if(mysql_num_rows($Qcheck)){
+	$check = mysql_fetch_object($Qcheck);
+	
+	$date = date('Y-m-d H:i:s');
+	
+	mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."imei` SET `user_id`='$check->user_id', `login_last`='$date' WHERE `imei_id`='$imei'");
+	mysql_query("INSERT INTO `".DB_NAME."`.`logs_imei` (`imei_id`, `user_id`) VALUES ('$imei', '$check->user_id')");
+	mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."user` SET `login_time`='$check->login_last', `login_last`='$date' WHERE `user_id`='$check->user_id'");
+	
+	echo '{"result":"success", "user_id":"'.$check->user_id.'", "role":"'.$check->role.'", "fullname":'.json_encode($check->name).', "vendor_id":"'.$check->vendor_id.'", "vendor_name":'.json_encode($check->vendor).', "token":'.json_encode(get_token($check->user_id)).'}';
+}
+else echo returnjson("failed", "Invalid login combination");
+
+mysql_close();

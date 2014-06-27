@@ -1,0 +1,16 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo sql2json("
+	SELECT c.`name` AS `category`, b.`name` AS `sub_category`, a.`item_id`, a.`name`, a.`free_text` AS 'planned', CONCAT_WS('|', IF(scope_1<>'N/A', 1, 
+NULL), IF(scope_2<>'N/A', 2, NULL), IF(scope_3<>'N/A', 3, NULL), IF(scope_4<>'N/A', 4, NULL), IF(scope_5<>'N/A', 5, NULL)) AS 'scope'
+	FROM `ss_items` a
+	JOIN `ss_item_subcategory` b ON b.`item_subcategory_id`=a.`item_subcategory_id`
+	JOIN `ss_item_category` c ON c.`item_category_id`=b.`item_category_id`
+	ORDER BY c.`item_category_id`, b.`item_subcategory_id`, a.`item_id`
+");
+
+mysql_close();

@@ -1,0 +1,46 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+function amankan($var){ $var = str_replace(array("'", '"'), array("\'", "\""), $var); return $var; }
+if($_POST['ss_id']) $ss_id=strip_tags($_POST['ss_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['date']) $date=$_POST['date']; if($date == "0000-00-00") $date = "NULL"; else $date = "'".$date."'";
+if($_POST['arrival_time']) $arrival_time=$_POST['arrival_time'].":00";
+if($_POST['departure_time']) $departure_time=$_POST['departure_time'].":00";
+if($_POST['ran_vendor']) $ran_vendor=amankan($_POST['ran_vendor']); if($ran_vendor == "") $ran_vendor = "NULL"; else $ran_vendor = "'".$ran_vendor."'";
+if($_POST['ran_vendor_team_lead']) $ran_vendor_team_lead=amankan($_POST['ran_vendor_team_lead']);  if($ran_vendor_team_lead == "") $ran_vendor_team_lead = "NULL"; else $ran_vendor_team_lead = "'".$ran_vendor_team_lead."'";
+if($_POST['mobile_no']) $mobile_no=preg_replace('#[^0-9,-]#i', '', $_POST['mobile_no']); if($mobile_no == "") $mobile_no = "NULL"; else $mobile_no = "'".$mobile_no."'";
+if($_POST['sub_contractor']) $sub_contractor=amankan($_POST['sub_contractor']); if($sub_contractor == "") $sub_contractor = "NULL"; else $sub_contractor = "'".$sub_contractor."'";
+if($_POST['sub_contractor_team_lead']) $sub_contractor_team_lead=amankan($_POST['sub_contractor_team_lead']); if($sub_contractor_team_lead == "") $sub_contractor_team_lead = "NULL"; else $sub_contractor_team_lead = "'".$sub_contractor_team_lead."'";
+if($_POST['agreed_date']) $agreed_date=$_POST['agreed_date']; if($agreed_date == "0000-00-00") $agreed_date = "NULL"; else $agreed_date = "'".$agreed_date."'";
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='ss' AND `idx`='$ss_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+if(mysql_num_rows($Qcheck)){
+	
+	mysql_query("UPDATE `ss_task` SET `date`='$date', `arrival_time`='$arrival_time', `departure_time`='$departure_time', `ran_vendor`=".$ran_vendor.", `ran_vendor_team_lead`=".$ran_vendor_team_lead.", `mobile_no`=".$mobile_no.", `sub_contractor`=".$sub_contractor.", `sub_contractor_team_lead`=".$sub_contractor_team_lead.", `agreed_date`='$agreed_date' WHERE `task_id`='$ss_id'");
+	
+	//echo "UPDATE `ss_task` SET `date`='$date', `arrival_time`='$arrival_time', `departure_time`='$departure_time', `ran_vendor`=".$ran_vendor.", `ran_vendor_team_lead`=".$ran_vendor_team_lead.", `mobile_no`=".$mobile_no.", `sub_contractor`=".$sub_contractor.", `sub_contractor_team_lead`=".$sub_contractor_team_lead.", `agreed_date`='$agreed_date' WHERE `task_id`='$ss_id'<br><br>";
+	
+	echo returnjson("success", "Submit Site Summary successfully");
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

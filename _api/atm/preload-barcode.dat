@@ -1,0 +1,36 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['atm_id']) $atm_id=strip_tags($_GET['atm_id']);
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+
+if(!$atm_id) die(returnjson("failed", "Required atm_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qlist = mysql_query("SELECT `name`, `detail`, `barcode`, `serial_no`, `qty`, `uom`, `note`, `material_type` FROM `".DB_NAME."`.`".DB_PREFIX."site_part` WHERE `atm_id`='$atm_id'");
+if(mysql_num_rows($Qlist)){
+	$i = 0;
+	$data = '';
+	while($list = mysql_fetch_object($Qlist)){
+		$note = explode('|', $list->note);
+		if($i) $data .= ', ';
+		$data .= '{"desc":'.json_encode($list->name).', "ori_brand":'.json_encode($list->detail).', "barcode":"'.$list->barcode.'", "serial_no":"'.$list->serial_no.'", "qty":"'.$list->qty.'", "uom":"'.$list->uom.'", "check":"'.$note[0].'", "note":"'.$note[1].'", "material_type":"'.$list->material_type.'"}';
+		$i = 1;
+	}
+	echo '{"result":"success", "num_data":"'.mysql_num_rows($Qlist).'", "data":['.$data.']}';
+}
+else echo json_encode(array('result' => 'nodata', 'message' => 'No data'));
+
+mysql_close();

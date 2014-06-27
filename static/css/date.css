@@ -1,0 +1,66 @@
+.dpTable{
+	font:11px "lucida grande",tahoma,verdana,arial,sans-serif;
+	text-align:center;
+	color:#FFF;
+	background:#666
+}
+.dpDayTR{
+	background:#FF0;
+	color:#FFF
+}
+.dpTodayButtonTR{}
+.dpTD{
+	padding:4px;
+	border:1px solid #666
+}
+.dpDayHighlightTD{
+	padding:4px;
+	background:#FFF
+}
+.dpTDHover{
+	background:#E2F0FD;
+	padding:4px;
+	cursor:pointer;
+	color:#0B538E
+}
+.dpTitleTD{}
+.dpButtonTD{background:#CCC}
+.dpTodayButtonTD{}
+.dpDayTD{
+	background:#0F67A1;
+	border:1px solid #A1DBFF;
+	color:#FFF
+}
+.dpTitleText{
+	font-size:11px;
+	font-weight:bold;
+	color:#FFF
+}
+.dpDayHighlight{
+	color:#000;
+	font-weight:bold
+}
+.dpButton{
+	font-size:10px;
+	font-weight:bold;
+	background:#CCC;
+	border:1px solid #CCC;
+	color:#0B538E;
+	margin:0;
+	padding:0;
+	cursor:pointer
+}
+.dpButtons{
+	background:#EEE;
+	border:1px solid #999;
+	-moz-border-radius:3px;
+	-khtml-border-radius:3px;
+	-webkit-border-radius:3px;
+	border-radius:3px;
+	text-align:center;
+	cursor:pointer;
+	font-size:11px;
+	margin-top:5px;
+	padding:2px 10px 3px 10px
+}
+.dpButtons:hover, .dpButtons:hover{border:1px solid #666}

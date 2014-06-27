@@ -1,0 +1,30 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['atp_id']) $atp_id=strip_tags($_GET['atp_id']);
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qmain = mysql_query("
+SELECT CASE `fl_approve` WHEN 6 THEN '1' ELSE '0' END AS `fl_done`, a.`fl_quest`, a.`fl_reject`, a.`atp_id`, a.`site_id`, a.`brand`, a.`fl_voice_call`, a.`fl_video_call`, a.`fl_video_record`, a.`fl_bcode`, a.`fl_free_photo`
+FROM `".DB_NAME."`.`".DB_PREFIX."atp` a
+JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`site_id`
+WHERE a.`atp_id`='$atp_id'");
+
+if(mysql_num_rows($Qmain)){
+	$main = mysql_fetch_object($Qmain);
+	
+	$Qboq = mysql_query("SELECT `files` FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `idx`='$main->site_id' AND `table`='boq_$main->brand'"); $boq = mysql_fetch_object($Qboq);
+	$Qdpc = mysql_query("SELECT `files` FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `idx`='$main->site_id' AND `table`='dpc_$main->brand'"); $dpc = mysql_fetch_object($Qdpc);
+	
+	echo '{"result":"success", "atp_id":"'.$main->atp_id.'", "fl_done":"'.$main->fl_done.'", "fl_page":"'.$main->fl_quest.'", "fl_voice_call":"'.$main->fl_voice_call.'", "fl_video_call":"'.$main->fl_video_call.'", "fl_video_record":"'.$main->fl_video_record.'", "fl_barcode":"'.$main->fl_bcode.'", "fl_free_photo":"'.$main->fl_free_photo.'", "boq_file":"'.$boq->files.'", "designpack_file":"'.$dpc->files.'"}';
+	
+}
+else echo '{"result":"nodata", "message":"No data"}';
+
+mysql_close();

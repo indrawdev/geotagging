@@ -1,0 +1,1 @@
+<?php require_once('koneksi.php'); extract($_GET); mysql_query("DELETE FROM `faq_content` WHERE `id`=$qid", $link); ?>

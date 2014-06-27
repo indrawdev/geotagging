@@ -1,0 +1,1 @@
+<?php date_default_timezone_set("Asia/Jakarta"); $link = mysql_connect("localhost", "root", "") or die("Koneksinya Error..."); mysql_select_db("geotagging", $link) or die("Databasenya Error..."); ?>

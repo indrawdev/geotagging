@@ -1,0 +1,33 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['ss_id']) $ss_id=strip_tags($_POST['ss_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['scope_id']) $scope_id=$_POST['scope_id'];
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+if(!$scope_id) die(returnjson("failed", "Required scope_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='ss' AND `idx`='$ss_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+if(mysql_num_rows($Qcheck)){
+	mysql_query("DELETE FROM `ss_task_scope` WHERE `task_id`='$ss_id'");
+	for($i=0; $i < count($scope_id); $i++) mysql_query("INSERT INTO `ss_task_scope` (`task_id`, `scope_id`) VALUES ('$ss_id', '".$scope_id[$i]."')") or die(returnjson("failed", "Sorry, could not execute Scope query"));
+	echo returnjson("success", "Submit Scope successfully");
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

@@ -1,0 +1,77 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['chapter']) $chapter=$_POST['chapter'];
+if($_POST['sub_chapter']) $sub_chapter=$_POST['sub_chapter'];
+if($_POST['quest']) $quest=$_POST['quest'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$quest) die(returnjson("failed", "Required quest value"));
+
+if($chapter){
+	$chapter_allowed = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20');
+	if(!in_array($chapter, $chapter_allowed, true)) die(returnjson('failed', 'Invalid chapter value'));
+}
+else die(returnjson('failed', 'Required chapter value'));
+
+if($sub_chapter){
+	$subchapter_allowed = array('5.1', '5.2', '5.3', '5.4', '5.5', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9', '8.4', '9.1', '9.2', '10.1', '10.2', '10.3', '10.4', '10.5', '10.6', '10.7', '10.8', '10.9', '10.10', '11.1', '12.1', '12.2', '13.1', '14.1', '14.2', '14.3', '14.4', '17.1', '17.2', '18.1', '18.2', '18.3', '18.4', '18.5', '18.6', '18.7', '18.8', '18.9', '18.10', '18.11', '18.12', '18.13', '18.14', '19.1', '19.2', '19.3');
+	if(!in_array($sub_chapter, $subchapter_allowed, true)) die(returnjson('failed', 'Invalid sub_chapter value'));
+}
+else die(returnjson('failed', 'Required sub_chapter value'));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$field = 'fl_no_chapter_'.$sub_chapter;
+	
+	$Qtasking = mysql_query("SELECT `$field` FROM `".DB_NAME."`.`".DB_PREFIX."atp` WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Tasking query"));
+	if(mysql_num_rows($Qtasking)):
+	
+	$tasking = mysql_fetch_object($Qtasking);
+	if($tasking->$field){
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_subchapter` WHERE `atp_id`='$atp_id' AND `user_id`='$user_id' AND `chapter`='$chapter' AND `no_chapter`='$sub_chapter'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	}
+	else $updated="`fl_quest`=`fl_quest`+1, `$field`='1'";
+	
+	for($i=0; $i < count($quest); $i++){
+		if(!empty($quest[$i])):
+		$questexplode=explode('|', $quest[$i]);
+		$multi_quest = "('$atp_id', '$user_id', '$chapter', '$sub_chapter', '".$questexplode[0]."', '".$quest[$i]."'), ".$multi_quest;
+		endif;
+	}
+	
+	$multi_quest=str_replace('), z', ');', $multi_quest.'z');
+	
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_subchapter` (`atp_id`, `user_id`, `chapter`, `no_chapter`, `subno_chapter`, `content`) VALUES $multi_quest") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if(mysql_affected_rows()){
+		
+		if($updated) include 'fl_done'.DAT;
+		
+		echo returnjson("success", "Submit Sub Chapter $sub_chapter successfully");
+	}
+	else echo returnjson("failed", "Unknown error from server");
+	
+	else: echo returnjson("failed", "This task was canceled from the server"); endif;
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

@@ -1,0 +1,36 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['latitude']) $latitude=strip_tags($_GET['latitude']);
+if($_GET['longitude']) $longitude=strip_tags($_GET['longitude']);
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$latitude || !$longitude) die(returnjson("failed", "Required latitude and longitude value"));
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Query = "
+		SELECT `id` AS `site_id`, `name`, `address`, `latitude`, `longitude`
+		FROM `".DB_NAME."`.`".DB_PREFIX."site`
+		ORDER BY 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* `latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* `latitude`/180)*COS(PI()* `longitude`/180-PI()* $longitude /180))) $Qpage $Qlimit";
+
+echo sql2json($Query);
+
+mysql_close();

@@ -1,0 +1,42 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['site_id']) $site_id=strip_tags($_GET['site_id']);
+
+if(!$site_id) die(returnjson("failed", "Required site_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qmaster = mysql_query("SELECT `id`, `group_id`, `name`, `barcode` FROM `".DB_NAME."`.`".DB_PREFIX."master_barcode` WHERE `id`='$site_id' AND `is_master`=1 ORDER BY `master_barcode_id` ASC");
+$num_p = mysql_num_rows($Qmaster);
+if($num_p){
+	$p = 1;
+	echo '{"result":"success", "num_data":"'.$num_p.'", "parent":[';
+	while($master = mysql_fetch_object($Qmaster)){
+		echo '{"site_id":"'.$master->id.'", "name":"'.$master->name.'", "barcode":"'.$master->barcode.'", "child":[';
+		
+		$Qchild = mysql_query("SELECT `id`, `name`, `barcode`, `serial` FROM `".DB_NAME."`.`".DB_PREFIX."master_barcode` WHERE `id`='$site_id' AND `is_master`=0 AND `group_id`='$master->group_id' ORDER BY `master_barcode_id` ASC");
+		$num_c = mysql_num_rows($Qchild);
+		if($num_c){
+			$c = 1;
+			while($child = mysql_fetch_object($Qchild)){
+				echo '{"name":"'.$child->name.'", "barcode":"'.$child->barcode.'", "serial_no":"'.$child->serial.'"}';
+				if($c < $num_c) echo ',';
+				$c++;
+			}
+		}
+		
+		echo ']}';
+		if($p < $num_p) echo ',';
+		$p++;
+	}
+	echo ']}';
+}
+else echo '{"result":"nodata", "message":"No data"}';
+
+//echo sql2json($Query);
+
+mysql_close();

@@ -1,0 +1,15 @@
+<?php
+header("Content-type: text/plain");
+if(!defined('DEVELOPER'))exit;
+
+if(isset($_GET['site_id'])){
+	$site_id = strip_tags($_GET['site_id']);
+}
+else die(returnjson("failed", "Required site_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo indent(sql2json("SELECT `id` AS `site_id`, `neid`, `short_desc` AS `description`, `ne_code` FROM `".DB_NAME."`.`".DB_PREFIX."network` WHERE `id`='$site_id'"));
+
+mysql_close();

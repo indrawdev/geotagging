@@ -1,0 +1,23 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['ss_id']) $ss_id=strip_tags($_GET['ss_id']);
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qmain = mysql_query("SELECT CASE `order_pmisat` WHEN 1 THEN '1' ELSE '0' END AS `fl_done`, CASE `order_pmvendor` WHEN 0 THEN '0' ELSE '1' END AS `fl_page` FROM `".DB_NAME."`.`ss_task` WHERE `task_id`='$ss_id'");
+if(mysql_num_rows($Qmain)){
+	$main = mysql_fetch_object($Qmain);
+	
+	$Qphoto = mysql_query("SELECT 1 FROM `".DB_NAME."`.`ss_task_photo` WHERE `task_id`='$ss_id' LIMIT 1");
+	
+	echo '{"result":"success", "ss_id":"'.$ss_id.'", "fl_done":"'.$main->fl_done.'", "fl_page":"'.$main->fl_page.'", "fl_photo":"'.mysql_num_rows($Qphoto).'"}';
+}
+else echo '{"result":"nodata", "message":"No data"}';
+
+mysql_close();

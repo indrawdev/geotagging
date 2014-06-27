@@ -1,0 +1,15 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo sql2json("
+	SELECT c.name AS 'category_name', a.`photo_id` AS 'photo_id', b.name AS 'name', GROUP_CONCAT(a.`scope_id` ORDER BY a.`scope_id` SEPARATOR '|') AS 'scope'
+	FROM `ss_scope_photo` a
+	JOIN `ss_photos` b ON (a.`photo_id` = b.`photo_id`)
+	JOIN `ss_photo_category` c ON (b.`photo_category_id` = c.`photo_category_id`)
+	GROUP BY `photo_id`
+");
+
+mysql_close();

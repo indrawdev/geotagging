@@ -1,0 +1,93 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['part_id']) $part_id=strip_tags($_POST['part_id']);
+if($_POST['latitude']) $latitude=strip_tags($_POST['latitude']);
+if($_POST['longitude']) $longitude=strip_tags($_POST['longitude']);
+if($_POST['image_note']) $image_note=$_POST['image_note'];
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['imei']) $imei=$_POST['imei']; if($imei == "") $imei = "NULL"; else $imei = "'".$imei."'";
+if($_POST['note']) $note=htmlentities($_POST['note']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$part_id) die(returnjson("failed", "Required part_id value"));
+
+if(!$latitude || !$longitude) die(returnjson("failed", "Required latitude and longitude value"));
+
+if(!$image_note) die(returnjson("failed", "Required image_note value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `part_id` FROM `".DB_NAME."`.`".DB_PREFIX."part` WHERE `part_id`='$part_id' AND `lat_scan` != '0' AND `lon_scan` != '0'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$Qcompare = mysql_query("SELECT `part_id` FROM `".DB_NAME."`.`".DB_PREFIX."part` WHERE `part_id`='$part_id' AND 1=1 AND 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* `latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* `latitude`/180)*COS(PI()* `longitude`/180-PI()* $longitude /180))) <=1") or die(returnjson("failed", "Sorry, could not execute Compare query"));
+	
+	if(mysql_num_rows($Qcompare)){
+		
+		if($_FILES['image_upload']['name'][0] || $_FILES['image_upload']['name'][1] || $_FILES['image_upload']['name'][2] || $_FILES['image_upload']['name'][3]){
+			$file_gallery=true;
+			$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+			while(list($key, $value)=each($_FILES['image_upload']['name'])){
+				if(!empty($value)):			
+				if(!in_array($_FILES['image_upload']['type'][$key], $file_allowed, true)){
+					$er_format=true; $iu++;
+				}
+				endif;
+			}
+			if($er_format) die(returnjson('failed', $iu.' file(s) invalid image_upload extention'));
+		}
+	
+		if($file_gallery){
+			$values=array(1=> "0", "1", "2", "3");
+			for($i=1; $i <= 4; $i++){
+				if(!empty($_FILES['image_upload']['name'][$values[$i]])):
+				$ii = $i - 1;
+				$temp_arr = explode('.', $_FILES['image_upload']['name'][$values[$i]]);
+				$file_ext = array_pop($temp_arr);
+				$file_ext = trim($file_ext);
+				$file_ext = strtolower($file_ext);
+				$file_name = date("YmdHms").'_'.rand(100, 999).'.'.$file_ext;
+				$file_path = ROOT.'media/files/'.$file_name;
+				move_uploaded_file($_FILES['image_upload']['tmp_name'][$values[$i]], $file_path);
+				$multi_upload="('$user_id', 'atp_part', '$part_id', '$file_name', '".$image_note[$ii]."', '".time()."'), ".$multi_upload;
+				endif;
+			}
+			$multi_upload=str_replace('), z', ');', $multi_upload.'z');
+			mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `note`, `timelog`) VALUES $multi_upload") or die(returnjson("failed", "Sorry, could not execute First Attachment query"));
+		}
+		
+		$timelog = time();
+		mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."checkin` (`table`, `idx`, `idx_main`, `user_id`, `latitude`, `longitude`, `timelog`, `imei`) VALUES ('atp_part', '$part_id', '$atp_id', '$user_id', '$latitude', '$longitude', '$timelog', ".$imei.")") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+		
+		if(mysql_affected_rows()){
+			
+			include 'fl_done'.DAT;
+			
+			if($note) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."misc` (`table`, `idx`, `user_id`, `note`, `timelog`) VALUES ('atp_part', '$part_id', '$user_id', '$note', '$timelog')") or die(returnjson("failed", "Sorry, could not execute Note query"));
+			
+			echo '{"result":"success", "checkin_uid":"'.$user_id.'", "checkin_timelog":"'.$timelog.'", "task_remaining":"'.$count.'"}';
+		}
+		else echo returnjson("failed", "Unknown error from server");
+		
+	}
+	else echo returnjson("failed", "The distance is too far away from destination");
+	
+}
+else echo returnjson("failed", "Please scan barcode first");
+
+mysql_close();

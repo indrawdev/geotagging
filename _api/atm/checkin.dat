@@ -1,0 +1,79 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atm_id']) $atm_id=strip_tags($_POST['atm_id']);
+if($_POST['latitude']) $latitude=strip_tags($_POST['latitude']);
+if($_POST['longitude']) $longitude=strip_tags($_POST['longitude']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['imei']) $imei=$_POST['imei'];
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atm_id) die(returnjson("failed", "Required atm_id value"));
+
+if(!$latitude || !$longitude) die(returnjson("failed", "Required latitude and longitude value. Your Latitude : $latitude, Longitude : $longitude"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+if($imei) $imei = "'$imei'"; else $imei = "NULL";
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='atm' AND `idx`='$atm_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	$Qcompare = mysql_query("
+		SELECT a.`atm_id`, b.`id`, b.`name` AS `destination`, b.`address`
+		FROM `".DB_NAME."`.`".DB_PREFIX."atm` a
+		JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`from_site`
+		WHERE a.`atm_id`='$atm_id' AND 1=1 AND 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* b.`latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* b.`latitude`/180)*COS(PI()* b.`longitude`/180-PI()* $longitude /180))) <=6
+	") or die(returnjson("failed", "Sorry, could not execute Compare query"));
+	if(!mysql_num_rows($Qcompare)) die(returnjson("failed", "The distance is too far away from destination"));
+	
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `user_id`='$user_id' AND `table`='atm_checkin' AND `idx`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Delete attachment query"));
+	
+	$timelog = time();
+	if($_FILES['image_upload']['name']):
+	$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+	if(in_array($_FILES['image_upload']['type'], $file_allowed, true)){
+		
+		$temp_arr = explode('.', $_FILES['image_upload']['name']);
+		$file_ext = array_pop($temp_arr);
+		$file_ext = trim($file_ext);
+		$file_ext = strtolower($file_ext);
+		$file_name = date("YmdHms").'_'.rand(100, 999).'.'.$file_ext;
+		$file_path = ROOT.'media/files/'.$file_name;
+		move_uploaded_file($_FILES['image_upload']['tmp_name'], $file_path);
+		mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `timelog`) VALUES ('$user_id', 'atm_checkin', '$atm_id', '$file_name', '$timelog')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+		
+	}
+	else die(returnjson('failed','Invalid image_upload extention'));
+	endif;
+
+	mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."book` SET `fl_active`='1' WHERE `table`='atm' AND `idx`='$atm_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+	
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atm' AND `idx`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Delete attachment query"));
+	
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."checkin` (`table`, `idx`, `user_id`, `latitude`, `longitude`, `timelog`, `imei`) VALUES ('atm', '$atm_id', '$user_id', '$latitude', '$longitude', '$timelog', ".$imei.")") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if(mysql_affected_rows()){
+		$compare = mysql_fetch_object($Qcompare);
+		mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atm` SET `fl_checkin`=1 WHERE `atm_id`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+		
+		echo '{"result":"success", "atm_id":"'.$atm_id.'", "site_id":'.json_encode($compare->id).', "site_name":'.json_encode($compare->destination).', "site_address":'.json_encode($compare->address).', "checkin_uid":"'.$user_id.'", "checkin_timelog":"'.$timelog.'"}';
+	}
+	else echo returnjson("failed", "Unknown error from server");
+}
+else echo returnjson("failed", "Please book first");
+
+mysql_close();

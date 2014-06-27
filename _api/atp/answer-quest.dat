@@ -1,0 +1,81 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['cell_id']) $cell_id=strip_tags($_POST['cell_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['lac']) $lac=strip_tags($_POST['lac']);
+if($_POST['quest']) $quest=$_POST['quest'];
+if($_POST['token']) $token=$_POST['token'];
+if($_FILES['image_upload']['name']) $file_name=$_FILES['image_upload']['name'];
+if($_FILES['image_upload']['type']) $file_type=$_FILES['image_upload']['type'];
+if($_FILES['image_upload']['tmp_name']) $file_loc=$_FILES['image_upload']['tmp_name'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$cell_id) die(returnjson("failed", "Required cell_id value"));
+
+if(!$lac) die(returnjson("failed", "Required lac value"));
+
+if(!$quest) die(returnjson("failed", "Required quest value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+
+	if($file_name){
+		$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+		if(in_array($file_type, $file_allowed, true)){
+			$temp_arr = explode('.', $file_name);
+			$file_ext = array_pop($temp_arr);
+			$file_ext = trim($file_ext);
+			$file_ext = strtolower($file_ext);
+			$new_file_name = date("YmdHms").'_'.rand(100, 999).'.'.$file_ext;
+			$file_path = ROOT.'media/files/'.$new_file_name;
+			move_uploaded_file($file_loc, $file_path);
+		}
+		else die(returnjson('failed','Invalid image_upload extention'));
+	}
+	
+	for($i=0; $i < count($quest); $i++){
+		if(!empty($quest[$i])):
+		$questexplode=explode(',', $quest[$i]);
+		$multi_quest = "('atp', '$atp_id', '$user_id', '".$questexplode[0]."', '".$questexplode[1]."', '".$questexplode[2]."'), ".$multi_quest;
+		endif;
+	}
+	
+	$multi_quest=str_replace('), z', ');', $multi_quest.'z');
+	
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."answer` (`table`, `idx`, `user_id`, `quest_id`, `option_a`, `option_b`) VALUES $multi_quest") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if(mysql_affected_rows()){
+		if($new_file_name) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `timelog`) VALUES ('$user_id', 'atp', '$atp_id', '$new_file_name', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+		
+		$Qtask = mysql_query("SELECT `part_id` FROM `".DB_NAME."`.`".DB_PREFIX."part` WHERE `table`='atp' AND `idx`='$atp_id'");
+		$Qdone = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp_part' AND `idx_main`='$atp_id'");
+		
+		$count=mysql_num_rows($Qtask) - mysql_num_rows($Qdone);
+		if($count==0) $fl_active=", `fl_active`='1'";
+		
+		mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `cell_id`='$cell_id', `lac`='$lac', `fl_quest`='1' $fl_active WHERE `atp_id`='$atp_id'");
+		
+		echo returnjson("success", "Insert quest successfully");
+	}
+	else echo returnjson("failed", "Unknown error from server");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

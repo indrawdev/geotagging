@@ -1,0 +1,353 @@
+.pt5{
+	padding-top:5px
+}
+.pt9{
+	padding-top:9px
+}
+.w140{
+	width:140px
+}
+.w150{
+	width:150px
+}
+.w250{
+	width:250px
+}
+.w330{
+	width:330px
+}
+.w342{
+	width:342px
+}
+.w385{
+	width:385px
+}
+.h100{
+	height:100px
+}
+
+.borderleft-1{
+	border-left:4px solid #F00
+}
+.borderleft-2{
+	border-left:4px solid #F90
+}
+.borderleft-3{
+	border-left:4px solid #0F0
+}
+.borderleft-4{
+	border-left:4px solid #03F
+}
+.borderleft-5{
+	border-left:4px solid #0FF
+}
+.borderleft-6{
+	border-left:4px solid #FF0
+}
+.borderleft-7{
+	border-left:4px solid #F0F
+}
+.borderleft-8{
+	border-left:4px solid #999
+}
+.borderleft-9{
+	border-left:4px solid #00F
+}
+.borderleft-10{
+	border-left:4px solid #330
+}
+.borderleft-11{
+	border-left:4px solid #C60
+}
+.borderleft-12{
+	border-left:4px solid #F6F
+}
+
+.cursor-default{
+	cursor:default
+}
+.cursor-move{
+	cursor:move
+}
+.cursor-pointer{
+	cursor:pointer
+}
+.cursor-nodrop{
+	cursor:no-drop
+}
+
+.display-block{
+	display:block
+}
+.display-none{
+	display:none
+}
+
+.error-box{
+    background:#FFEBE8;
+	border:#C00
+}
+.warning-box{
+	background:#FFFFE0;
+	border:#E6DB55
+}
+.info-box{
+	background:#ECEFF6;
+	border:#0F67A1
+}
+.error-box, .warning-box, .info-box{
+	text-align:center;
+	border-width:1px;
+	border-style:solid;
+	margin:0 0 5px 0;
+	padding:10px;
+	
+	border-radius:3px;
+	-moz-border-radius:3px;
+	-webkit-border-radius:3px;
+	-khtml-border-radius:3px;
+	-o-border-radius:3px;
+	-ms-border-radius:3px
+}
+
+form#search-box{
+	float:left;
+	margin:-3px 10px 0 0;
+	padding:0
+}
+.inputbox{
+	font:12px "lucida grande", tahoma, verdana, arial, sans-serif;
+	padding:5px;
+	margin:5px 0 7px 0;
+}
+.searchbox{
+	font:10px "lucida grande", tahoma, verdana, arial, sans-serif;
+	padding:5px 4px 3px 4px;
+	text-align:center;
+	width:200px
+}
+.inputbox, .searchbox{
+	background:#F5F5F5;
+	border:1px solid #8C8C8C;
+	border-right:1px solid #FFF;
+	border-bottom:1px solid #FFF;
+	
+	border-radius:4px;
+	-moz-border-radius:4px;
+	-webkit-border-radius:4px;
+	-khtml-border-radius:4px;
+	-o-border-radius:4px;
+	-ms-border-radius:4px
+}
+.inputbox:hover, .inputbox:focus, .searchbox:hover, .searchbox:focus{
+	box-shadow:0 0 8px #BCBCBC;
+	-moz-box-shadow:0 0 8px #BCBCBC;
+	-webkit-box-shadow:0 0 8px #BCBCBC
+}
+input[type="file"].inputbox{
+	padding:0
+}
+
+.buton{
+	background:#AAE1FF;
+	color:#0F67A1
+}
+.butons{
+	background:#82B7D8;
+	color:#FFF
+}
+.buton, .butons{
+	border:1px solid #0F67A1;
+	padding:2px 10px 4px 10px;
+	
+	border-radius:2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	-khtml-border-radius:2px;
+	-o-border-radius:2px;
+	-ms-border-radius:2px
+}
+.buton:hover, .butons:hover{
+	text-decoration:none
+}
+
+.buttons, .button{
+	font:11px Tahoma, Geneva, sans-serif;
+	margin:0;
+	padding:2px 10px 4px 10px
+}
+.button{
+	background:#2E64AE;
+	border:1px solid #08487C;
+	border-top:2px solid #1C74BC
+}
+.button:hover{ background:#0B538E }
+.buttons{
+	background:#9B8831;
+	border:1px solid #776720;
+	border-top:2px solid #B59D32
+}
+.buttons:disabled, .button:disabled{
+	cursor:wait;
+	background:#999;
+	border:1px solid #666;
+	border-top:2px solid #CCC
+}
+.button, .buttons{
+	color:#FFF;
+	cursor:pointer;
+	text-align:center;
+	text-shadow:none
+}
+a.buttons:hover, a.button:hover{
+	text-decoration:none
+}
+
+.box_paging{
+	padding:5px 0;
+	margin:8px 0
+}
+.box_paging a{
+	background:#FFF;
+	color:#000;
+	text-decoration:none;
+	padding:4px 8px 5px 8px;
+	border-radius:3px;
+	-moz-border-radius:3px;
+	-webkit-border-radius:3px;
+	-khtml-border-radius:3px;
+	-o-border-radius:3px;
+	-ms-border-radius:3px
+}
+.box_paging .active{
+	background:#007BC1;
+	color:#FFF
+}
+.box_paging span{
+	color:#ADADAD;
+	padding:0 20px
+}
+
+.table-dashboard{
+	margin:10px 0 20px 0;
+	width:100%
+}
+.table-dashboard tr{
+	border-bottom:1px solid #EEE
+}
+.table-dashboard tr:last-child{
+	border:none
+}
+.table-dashboard tr td{
+	padding:2px 0
+}
+.table-dashboard img{
+	vertical-align:top
+}
+
+ul.ui-autocomplete{
+	background:url(../i/as_pointer.gif) top center no-repeat;
+	position:absolute;
+	text-shadow:none;
+	text-transform:capitalize;
+	list-style:none;
+	padding:10px 0 0 0
+}
+.ui-autocomplete-category{
+	background:#516BA3;
+	font-style:italic;
+	color:#FFF;
+	padding:5px
+}
+ul.ui-autocomplete li div{
+	background:#C8D8EE;
+	color:#516BA3;
+	padding:5px 8px;
+	
+	border-radius:3px;
+	-moz-border-radius:3px;
+	-webkit-border-radius:3px;
+	-khtml-border-radius:3px;
+	-o-border-radius:3px;
+	-ms-border-radius:3px
+}
+ul.ui-autocomplete li.ui-menu-item{
+	cursor:pointer
+}
+ul.ui-autocomplete li a:hover{
+	text-decoration:none;
+}
+ul.ui-autocomplete li div:hover{
+	background:#007241;
+	color:#FFF;
+}
+
+#if_box{
+	display:none;
+	width:470px
+}
+#if-box{
+	display:none;
+	width:670px
+}
+#if_box .ifheader, #if-box .ifheader{height:10px}
+#if_box .ifheader .ifleft, #if-box .ifheader .ifleft{
+	background:url(../i/tl.gif) top right no-repeat;
+	width:10px
+}
+#if_box .ifheader .ifmiddle{
+	background:#F7F7F7;
+	width:450px
+}
+#if-box .ifheader .ifmiddle{
+	background:#F7F7F7;
+	width:650px
+}
+#if_box .ifheader .ifright, #if-box .ifheader .ifright{
+	background:url(../i/tr.gif) top left no-repeat;
+	width:10px
+}
+#if_box .ifbody .ifmiddle, #if-box .ifbody .ifmiddle{
+	background:#F7F7F7;
+	padding:0 10px
+}
+#if_box .iffooter, #if-box .iffooter{height:10px}
+#if_box .iffooter .ifleft, #if-box .iffooter .ifleft{
+	background:url(../i/bl.gif) top right no-repeat;
+	width:10px
+}
+#if_box .iffooter .ifmiddle, #if-box .iffooter .ifmiddle{background:#F7F7F7}
+#if_box .iffooter .ifright, #if-box .iffooter .ifright{
+	background:url(../i/br.gif) top left no-repeat;
+	width:10px
+}
+#ifbox_body{
+	color:#666;
+	text-align:left
+}
+#ifbox_body .iheader{
+	background:#0F67A1 url(../i/favicons.png) left center no-repeat;
+	font-weight:bold;
+	font-size:12px;
+	color:#FFF;
+	text-transform:uppercase;
+	text-shadow:#111 1px 1px 1px;
+	padding:10px 10px 10px 35px
+}
+#ifbox_body .ibody{
+	font-size:11px;
+	padding:10px 0 0 0
+}
+#ifbox_body .ibody .inputbox{
+	background:#FFF
+}
+#ifbox_body .ibody .holder{
+	overflow:auto;
+	height:300px
+}
+#ifbox_body .ifooter{
+	text-align:right;
+	margin:15px 0 0 0;
+	padding:8px 0 0 0;
+	border-top:1px solid #003865
+}

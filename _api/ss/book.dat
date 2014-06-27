@@ -1,0 +1,59 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['ss_id']) $ss_id=strip_tags($_POST['ss_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog`, `user_id`, `fl_active` FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='ss' AND `idx`='$ss_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	$check = mysql_fetch_object($Qcheck);
+	
+	if(($check->fl_active==0) && (check_time($check->timelog, 'minutes') > 59)){
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='ss' AND `idx`='$ss_id' AND `fl_active`='0'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+		if(!mysql_affected_rows()){
+			$Qrecheck = mysql_query("SELECT `timelog`, `user_id`, `fl_active` FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='ss' AND `idx`='$ss_id'") or die(returnjson("failed", "Sorry, could not execute Recheck query"));
+			if(mysql_num_rows($Qrecheck)){
+				$recheck = mysql_fetch_object($Qrecheck);
+				die('{"result":"failed", "message":"Has been taken by other users", "booked_uid":"'.$recheck->user_id.'", "booked_timelog":"'.$recheck->timelog.'", "checkin_status":"'.$recheck->fl_active.'"}');
+			}
+			else $avail = true;
+		}
+		else $avail = true;
+	}
+	else die('{"result":"failed", "message":"Has been taken by other users", "booked_uid":"'.$check->user_id.'", "booked_timelog":"'.$check->timelog.'", "checkin_status":"'.$check->fl_active.'"}');
+	
+}
+else $avail = true;
+
+if($avail){
+	
+	$timelog = time();
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."book` (`table`, `idx`, `user_id`, `timelog`) VALUES ('ss', '$ss_id', '$user_id', '$timelog')") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if(mysql_affected_rows()){
+		mysql_query("UPDATE `".DB_NAME."`.`ss_task` SET `user_engineer`='$user_id' WHERE `task_id`='$ss_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+		echo '{"result":"success", "ss_id":"'.$ss_id.'", "booked_uid":"'.$user_id.'", "booked_timelog":"'.$timelog.'"}';
+	}
+	else echo returnjson("failed", "Unknown error from server");
+}
+
+mysql_close();

@@ -1,0 +1,2 @@
+form mengirim semua data.
+jika ada baris yang kosong, semua bernilai "null"

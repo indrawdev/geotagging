@@ -1,0 +1,30 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$_FILES['image_upload']['name']) die(returnjson("failed", "Required image_upload value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$temp_arr = explode('.', $_FILES['image_upload']['name']);
+$file_ext = array_pop($temp_arr);
+$file_ext = trim($file_ext);
+$file_ext = strtolower($file_ext);
+$file_name = date("YmdHms").'_'.rand(100, 999).'.'.$file_ext;
+$file_path = ROOT.'media/files/'.$file_name;
+move_uploaded_file($_FILES['image_upload']['tmp_name'], $file_path);
+mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `table`='atp_indosat_foto' AND `idx`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Delete attachment query"));
+mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `timelog`) VALUES ('$user_id', 'atp_indosat_foto', '$atp_id', '$file_name', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+
+if(mysql_affected_rows()) echo returnjson("success", "Submit file successfully"); else echo returnjson("failed", "Unknown error from server");
+
+mysql_close();

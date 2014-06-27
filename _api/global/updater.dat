@@ -1,0 +1,9 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo sql2json("SELECT `version`, `file` FROM `".DB_NAME."`.`apps` WHERE `active`=1", true);
+
+mysql_close();

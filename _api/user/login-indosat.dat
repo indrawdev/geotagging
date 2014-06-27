@@ -1,0 +1,24 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['username']) $username=strip_tags($_POST['username']);
+if($_POST['password']) $password=strip_tags($_POST['password']);
+
+if(!$username) die(returnjson("failed", "Required username value"));
+
+if(!$password) die(returnjson("failed", "Required password value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `user_id` FROM `".DB_NAME."`.`".DB_PREFIX."user` WHERE `fl_active`=1 AND `role_id`='6' AND `uname`='$username' AND `pswd`='".get_pswd($password)."'") or die(returnjson("failed", "Sorry, could not execute query"));
+
+if(mysql_num_rows($Qcheck)){
+	$check = mysql_fetch_object($Qcheck);
+	echo '{"result":"success", "user_id":"'.$check->user_id.'", "message":"Login successful"}';
+}
+else echo returnjson("failed", "Invalid login combination");
+
+mysql_close();

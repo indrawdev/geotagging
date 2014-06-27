@@ -1,0 +1,68 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['latitude']) $latitude=strip_tags($_GET['latitude']);
+if($_GET['longitude']) $longitude=strip_tags($_GET['longitude']);
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+if($_GET['status']) $status=$_GET['status'];
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$latitude || !$longitude) die(returnjson("failed", "Required latitude and longitude value. Your Latitude : $latitude, Longitude : $longitude"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($status){
+	$status_allowed = array('done', 'undone');
+	if(!in_array($status, $status_allowed, true)) die(returnjson('failed', 'Invalid status value'));
+}
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($status){
+	if($status == 'done') $fl_done = "AND a.`fl_approve`=5"; else $fl_done = "AND a.`fl_approve` < 5";
+}
+
+$res = mysql_fetch_array(mysql_query("SELECT `vendor_id` FROM `it_user` WHERE `user_id` = '$user_id'")); $v = $res[0];
+
+$Query = "
+	SELECT a.`atm_id`, a.`title`, a.`atf_no`, a.`reason`, a.`work_type`, a.`atm_type`, a.`date` AS `movement_date`, a.`division`, a.`po_no`, a.`vendor_id`, d.`name` AS `vendor_name`, a.`from_neid`, g.`desc` AS `from_neid_desc`, b.`id` AS `from_siteId`, b.`name` AS `from_siteName`, b.`address` AS `from_siteAddress`, b.`city` AS `from_siteCity`, b.`province` AS `from_siteProvince`, b.`latitude` AS `from_siteLatitude`, b.`longitude` AS `from_siteLongitude`, a.`to_neid`, i.`desc` AS `to_neid_desc`, c.`id` AS `to_siteId`, c.`name` AS `to_siteName`, c.`address` AS `to_siteAddress`, c.`city` AS `to_siteCity`, c.`province` AS `to_siteProvince`, c.`latitude` AS `to_siteLatitude`, c.`longitude` AS `to_siteLongitude`, a.`timelog`, j.`user_id` AS `book_uid`, j.`timelog` AS `book_timelog`, e.`user_id` AS `checkin_uid`, e.`timelog` AS `checkin_timelog`, CASE a.`order_wh` WHEN 0 THEN '0' WHEN 3 THEN '0' ELSE '1' END AS `fl_approved`
+	FROM `".DB_NAME."`.`".DB_PREFIX."atm` a
+	JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`from_site`
+	JOIN `".DB_NAME."`.`".DB_PREFIX."site` c ON c.`site_id`=a.`to_site`
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."vendor` d ON d.`vendor_id`=a.`vendor_id`		
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."checkin` e ON e.`idx`=a.`atm_id` AND e.`table`='atm'
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network` f ON f.`neid`=a.`from_neid`
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network_code` g ON g.`ne_code`=f.`ne_code`
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network` h ON h.`neid`=a.`to_neid`
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network_code` i ON i.`ne_code`=h.`ne_code`
+	LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."book` j ON j.`idx`=a.`atm_id` AND j.`table`='atm'
+	WHERE a.`vendor_id` LIKE '$v' AND a.`fl_status`=1 AND a.`fl_active`=0 $fl_done
+	ORDER BY 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* b.`latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* b.`latitude`/180)*COS(PI()* b.`longitude`/180-PI()* $longitude /180))) $Qpage $Qlimit
+";
+
+echo sql2json($Query);
+
+mysql_close();

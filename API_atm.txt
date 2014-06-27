@@ -1,0 +1,255 @@
+------GET WORK ORDER ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/work-order.if
+
+- status	=> value format: (done|undone)
+- latitude
+- longitude
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> Work Order already sorted by current user location.
+
+
+
+
+------GET WORK ORDER PIC ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/work-order-pic.if
+
+- status	=> value format: (done|undone)
+- latitude
+- longitude
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> Work Order already sorted by current user location.
+
+
+
+
+------SEARCH WORK ORDER ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/search-wo.if
+
+- keyword
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+
+
+
+------SEARCH WORK ORDER PIC ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/search-wo-pic.if
+
+- keyword
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+
+
+
+-----GET ATM TASK RESUME [GET]
+
+https://indosat-geotaging.com/graph/atm/task-resume.if
+
+- atm_id
+
+
+
+
+------SUBMIT BOOK ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/book.if
+
+- atm_id
+- user_id
+- token
+
+
+
+
+------SUBMIT CANCEL BOOK ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/cancel-book.if
+
+- atm_id
+- user_id
+- token
+
+
+
+
+------SUBMIT CHECKIN ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/checkin.if
+
+- atm_id
+- latitude
+- longitude
+- image_upload	=> may require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+-----GET PRELOAD BARCODE [GET]
+
+https://indosat-geotaging.com/graph/atm/preload-barcode.if
+
+- atm_id
+- user_id
+- token
+
+
+
+
+-----SUBMIT ACTION PIC [POST]
+
+https://indosat-geotaging.com/graph/atm/action-pic.if
+
+- atm_id
+- action		=> format value: (`1` = Approve | `2` = Approve with Remark | `3` = Reject)
+- message
+- user_id
+- token
+
+
+
+
+------SUBMIT BARCODE ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/barcode.if
+
+- atm_id
+- atf_date		=> format value: (YYYY-mm-dd HH:ii:ss | 2013-03-24 02:30:49)
+- material_type[]
+- serial_no[]
+- barcode[]
+- desc[]
+- ori_brand[]
+- qty[]
+- uom[]
+- check[]
+- note[]
+- image_upload[]		=> require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> `material_type, serial_no, barcode, desc, ori_brand, qty, uom, check, note` can submit as array.
+
+
+
+
+------SUBMIT FREE PHOTO ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/free-photo.if
+
+- atm_id
+- user_id
+- token
+- image_upload
+- image_desc	=> (lat|lon|lac|cell_id|timestamp)
+- title
+- comment	=> maxlength 200char
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `title` can submit like array: `title[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT IN SHELTER CONDITION PHOTO [POST]
+
+https://indosat-geotaging.com/graph/atm/in-shelter-condition-photo.if
+
+- atm_id
+- user_id
+- token
+- photo_title
+- image_upload
+- image_desc	=> (latitude|longitude|lac|cell_id)
+- comment
+
+note:
+=> `photo_title` can submit like array: `photo_title[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT OUT SHELTER CONDITION PHOTO [POST]
+
+https://indosat-geotaging.com/graph/atm/out-shelter-condition-photo.if
+
+- atm_id
+- user_id
+- token
+- photo_title
+- image_upload
+- image_desc	=> (latitude|longitude|lac|cell_id)
+- comment
+
+note:
+=> `photo_title` can submit like array: `photo_title[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT PACKAGING PHOTO [POST]
+
+https://indosat-geotaging.com/graph/atm/packaging-photo.if
+
+- atm_id
+- user_id
+- token
+- photo_title
+- image_upload
+- image_desc	=> (latitude|longitude|lac|cell_id)
+- comment
+
+note:
+=> `photo_title` can submit like array: `photo_title[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)

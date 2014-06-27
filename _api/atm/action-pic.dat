@@ -1,0 +1,54 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atm_id']) $atm_id=strip_tags($_POST['atm_id']);
+if($_POST['action']) $action=$_POST['action'];
+if($_POST['message']) $message=htmlentities($_POST['message']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['check']) $check=$_POST['check'];
+
+if(!$atm_id) die(returnjson("failed", "Required atm_id value"));
+
+if(!$action) die(returnjson("failed", "Required action value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($action==3){
+	
+	$actions = 0;
+	mysql_query("UPDATE `it_atm` SET `atf_date`=NULL, `user_delegator_nom`=NULL, `user_delegator_vendor`=NULL, `user_delegator_consultant`=NULL, `user_delegator_indosat`=NULL, `msg_delegator_nom`=NULL, `msg_delegator_vendor`=NULL, `msg_delegator_consultant`=NULL, `msg_delegator_indosat`=NULL, `msg_wh`=NULL, `msg_nom`=NULL, `msg_vendor`=NULL, `msg_consultant`=NULL, `msg_indosat`=NULL, `order_wh`=0, `order_nom`=0, `order_vendor`=0, `order_consultant`=0, `order_indosat`=0, `fl_barcode`=0, `fl_checkin`=0, `fl_approve`=0, `fl_reject`=1 WHERE `atm_id`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Reject query"));
+	mysql_query("DELETE FROM `it_checkin` WHERE `table`='atm' AND `idx`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Checkin query"));
+	
+	//email atm
+}else{
+	
+	$actions = 1;
+	mysql_query("UPDATE `it_atm` SET `order_wh`=1, `msg_wh`='$message', `order_vendor`=3, `fl_reject`=0, `fl_approve`=1 WHERE `atm_id`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute Approve query"));
+	//email atm
+}
+
+mysql_query("INSERT INTO `it_log_app` (`table`, `idx`, `user_id`, `action`, `note`, `timelog`) VALUES ('atm', '$atm_id', '$user_id', '$actions', '$message', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Logs query"));
+
+if($check){
+	$q = mysql_query("SELECT `site_part_id` FROM `it_site_part` WHERE `atm_id`='$atm_id' ORDER BY `site_part_id` ASC");
+	$i = 0;
+	while($data = mysql_fetch_array($q)){
+		mysql_query("UPDATE `it_site_part` SET `check`='".$check[$i]."' WHERE `site_part_id`='".$data[0]."'");
+		$i++;
+	}
+}
+
+echo returnjson("success", "Submit action successful");
+
+mysql_close();

@@ -1,0 +1,17 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['atm_id']) $atm_id=strip_tags($_GET['atm_id']);
+
+if(!$atm_id) die(returnjson("failed", "Required atm_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Query = "SELECT CASE `fl_approve` WHEN 5 THEN '1' ELSE '0' END AS `fl_done`, `fl_barcode` +0 AS `fl_barcode`, `fl_checkin` +0 AS `fl_checkin`, `fl_free_photo` +0 AS `fl_free_photo`, `atm_id` FROM `".DB_NAME."`.`".DB_PREFIX."atm` WHERE `atm_id`='$atm_id'";
+
+echo sql2json($Query, true);
+
+mysql_close();

@@ -1,0 +1,52 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['keyword']) $keyword=$_GET['keyword'];
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$keyword) die(returnjson('failed','Required keyword value')); else $keyword=str_replace(" ", "%", $keyword);
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Query = "
+		SELECT a.`atm_id`, a.`title`, a.`atf_no`, a.`reason`, a.`work_type`, a.`atm_type`, a.`date` AS `movement_date`, a.`division`, a.`po_no`, a.`vendor_id`, a.`from_neid`, g.`desc` AS `from_neid_desc`, b.`id` AS `from_siteId`, b.`name` AS `from_siteName`, b.`address` AS `from_siteAddress`, b.`city` AS `from_siteCity`, b.`province` AS `from_siteProvince`, b.`latitude` AS `from_siteLatitude`, b.`longitude` AS `from_siteLongitude`, a.`to_neid`, i.`desc` AS `to_neid_desc`, c.`id` AS `to_siteId`, c.`name` AS `to_siteName`, c.`address` AS `to_siteAddress`, c.`city` AS `to_siteCity`, c.`province` AS `to_siteProvince`, c.`latitude` AS `to_siteLatitude`, c.`longitude` AS `to_siteLongitude`, a.`timelog`, d.`user_id` AS `checkin_uid`, d.`timelog` AS `checkin_timelog`, CASE a.`order_wh` WHEN 0 THEN '0' WHEN 3 THEN '0' ELSE '1' END AS `fl_approved`
+		FROM `".DB_NAME."`.`".DB_PREFIX."atm` a
+		JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`from_site`
+		JOIN `".DB_NAME."`.`".DB_PREFIX."site` c ON c.`site_id`=a.`to_site`
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."checkin` d ON d.`idx`=a.`atm_id` AND d.`table`='atm'
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network` f ON f.`neid`=a.`from_neid`
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network_code` g ON g.`ne_code`=f.`ne_code`
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network` h ON h.`neid`=a.`to_neid`
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."network_code` i ON i.`ne_code`=h.`ne_code`
+		WHERE a.`user_wh`='$user_id' AND a.`order_wh` > 0 AND a.`fl_status`=1 AND a.`fl_active`=0 AND a.`fl_approve` < 5 AND (a.`title` LIKE '%$keyword%' OR a.`atf_no` LIKE '%$keyword%' OR b.`address` LIKE '%$keyword%' OR b.`city` LIKE '%$keyword%' OR b.`province` LIKE '%$keyword%' OR c.`address` LIKE '%$keyword%' OR c.`city` LIKE '%$keyword%' OR c.`province` LIKE '%$keyword%')
+		ORDER BY 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* b.`latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* b.`latitude`/180)*COS(PI()* b.`longitude`/180-PI()* $longitude /180))) $Qpage $Qlimit";
+
+echo sql2json($Query);
+
+mysql_close();

@@ -1,0 +1,38 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['type']) $type=$_POST['type'];
+if($_POST['message']) $message=$_POST['message'];
+if($_POST['site_id']) $site_id=strip_tags($_POST['site_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$message) die(returnjson("failed", "Required message value"));
+
+if($type){
+	$type_allowed = array('boq', 'designpack');
+	if(!in_array($type, $type_allowed, true)) die(returnjson('failed', 'Invalid type value'));
+}
+else die(returnjson('failed', 'Required type value'));
+
+if(!$site_id) die(returnjson("failed", "Required site_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($type == 'boq') $field = "`comment_boq`='".time()."|$message', `comment_boq_uid`='$user_id'"; else $field = "`comment_designpack`='".time()."|$message', `comment_designpack_uid`='$user_id'";
+
+mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."site` SET $field WHERE `id`='$site_id'") or die(returnjson("failed", "Sorry, could not execute query"));
+
+echo returnjson("success", "Submit comment successfully");
+
+mysql_close();

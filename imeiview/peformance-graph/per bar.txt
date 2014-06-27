@@ -1,0 +1,4 @@
+SELECT a.`imei_id`, b.name, c.name, b.`login_last`
+FROM `it_imei` a JOIN it_user b ON (a.user_id=b.user_id)
+LEFT JOIN it_vendor c ON (b.vendor_id=c.vendor_id)
+ORDER BY a.login_last DESC

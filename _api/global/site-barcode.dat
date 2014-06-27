@@ -1,0 +1,67 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['name']) $name=$_POST['name'];
+if($_POST['qty']) $qty=$_POST['qty'];
+if($_POST['uom']) $uom=$_POST['uom'];
+if($_POST['detail']) $detail=$_POST['detail'];
+if($_POST['note']) $note=$_POST['note'];
+if($_POST['barcode']) $barcode=$_POST['barcode'];
+if($_POST['serial_no']) $serial_no=$_POST['serial_no'];
+if($_POST['image_upload']) $image_upload=$_POST['image_upload'];
+if($_POST['site_id']) $site_id=strip_tags($_POST['site_id']);
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$site_id) die(returnjson("failed", "Required site_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+for($i=0; $i < count($_FILES['image_upload']['name']); $i++){
+	if(!empty($_FILES['image_upload']['name'][$i])){
+			
+		$new_file_name = '';
+		
+		$Qcheck = mysql_query("SELECT `site_part_id` FROM `".DB_NAME."`.`".DB_PREFIX."site_part` WHERE `id`='$site_id' AND `barcode`='".$barcode[$i]."'");
+		if(!mysql_num_rows($Qcheck)){
+			
+			if(in_array($_FILES['image_upload']['type'][$i], $file_allowed, true)):
+			$fileext = explode('.', $_FILES['image_upload']['name'][$i]);
+			$file_ext = strtolower(end($fileext));
+			
+			$new_name = date("YmdHms").'_'.rand(100, 999);
+			$new_file_name = $new_name.'.'.$file_ext;
+			
+			$file_path = ROOT.'media/files/'.$new_file_name;
+			move_uploaded_file($_FILES['image_upload']['tmp_name'][$i], $file_path);
+			
+			if(($file_ext == 'gif')||($file_ext == 'png')){
+				convert_to_jpg($file_path, ROOT.'media/files/'.$new_name.'.jpg', $file_ext);
+				$new_file_name = $new_name.'.jpg';
+				un_link($file_path);
+			}
+			
+			if($new_file_name) mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."site_part` (`atp_id`, `id`, `name`, `detail`, `barcode`, `serial_no`, `qty`, `uom`, `note`, `files`, `timelog`) VALUES ('$atp_id', '$site_id', '".$name[$i]."', '".$detail[$i]."', '".$barcode[$i]."', '".$serial_no[$i]."', '".$qty[$i]."', '".$uom[$i]."', '".$note[$i]."', '$new_file_name', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+			
+			endif;
+		}
+	}
+}
+
+if($new_file_name) mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `fl_bcode`='1' WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+
+echo returnjson("success", "Submit barcode Site successfully");
+
+mysql_close();

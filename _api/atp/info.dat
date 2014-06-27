@@ -1,0 +1,21 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['atp_id']) $atp_id=strip_tags($_GET['atp_id']);
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Query = "
+		SELECT a.`atp_id`, a.`vendor_id`, a.`id`, a.`title`, a.`destination`, a.`address`, a.`latitude`, a.`longitude`, a.`time_task`, a.`timelog`, b.`user_id` AS `booked_uid`, b.`timelog` AS `booked_timelog`, a.`fl_done`
+		FROM `".DB_NAME."`.`".DB_PREFIX."atp` a
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."book` b ON b.`idx`=a.`atp_id` AND b.`table`='atp'
+		WHERE a.`atp_id`='$atp_id'";
+
+echo sql2json($Query, true);
+
+mysql_close();

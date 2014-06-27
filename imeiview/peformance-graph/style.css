@@ -1,0 +1,48 @@
+@charset "utf-8";
+/* CSS Document */
+
+body{
+	background:#D7D7D7  url(../../static/i/pattern-gray.png) top left repeat;
+	font:11px Verdana, Geneva, sans-serif;
+	line-height:1.5;
+	margin:2px;
+	padding:0
+}
+
+.header{
+	background-image:url(../../static/i/grad-blue.png);
+	background-repeat:repeat-x;
+	background-size:100% 50px;
+	padding-top:10px;
+	padding-bottom:15px;
+}
+#logo { float:left; }
+#header-content{
+	margin-left:auto; margin-right:auto;
+	width:1024px;
+	text-align:center;
+	color:#FFF;
+}
+
+.button{
+	background-image: linear-gradient(bottom, rgb(166,161,166) 2%, rgb(255,255,255) 85%);
+	background-image: -o-linear-gradient(bottom, rgb(166,161,166) 2%, rgb(255,255,255) 85%);
+	background-image: -moz-linear-gradient(bottom, rgb(166,161,166) 2%, rgb(255,255,255) 85%);
+	background-image: -webkit-linear-gradient(bottom, rgb(166,161,166) 2%, rgb(255,255,255) 85%);
+	background-image: -ms-linear-gradient(bottom, rgb(166,161,166) 2%, rgb(255,255,255) 85%);
+	
+	background-image: -webkit-gradient(
+		linear,
+		left bottom,
+		left top,
+		color-stop(0.02, rgb(166,161,166)),
+		color-stop(0.85, rgb(255,255,255))
+	);
+
+	border:1px solid #CCC;
+	border-radius:10px;
+	padding:1px 10px;
+	margin-left:8px;
+	cursor:pointer;
+}
+.content{ text-align:center; }

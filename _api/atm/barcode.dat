@@ -1,0 +1,82 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atm_id']) $atm_id=strip_tags($_POST['atm_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['atf_date']) $atf_date=$_POST['atf_date'];
+if($_POST['material_type']) $material_type=$_POST['material_type'];
+if($_POST['serial_no']) $serial_no=$_POST['serial_no'];
+if($_POST['barcode']) $barcode=$_POST['barcode'];
+if($_POST['desc']) $desc=$_POST['desc'];
+if($_POST['ori_brand']) $ori_brand=$_POST['ori_brand'];
+if($_POST['qty']) $qty=$_POST['qty'];
+if($_POST['uom']) $uom=$_POST['uom'];
+if($_POST['check']) $check=$_POST['check'];
+if($_POST['note']) $note=$_POST['note'];
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atm_id) die(returnjson("failed", "Required atm_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$atf_date) die(returnjson("failed", "Required atf_date value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atm' AND `idx`='$atm_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$Qatms = mysql_query("
+					SELECT b.`id` AS `from_siteid`, c.`id` AS `to_siteid`
+					FROM `".DB_NAME."`.`".DB_PREFIX."atm` a
+					JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`from_site`
+					JOIN `".DB_NAME."`.`".DB_PREFIX."site` c ON c.`site_id`=a.`to_site`
+					WHERE a.`atm_id`='$atm_id'") or die(returnjson("failed", "Sorry, could not execute ATM query"));
+	$atms = mysql_fetch_object($Qatms);
+	
+	$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+	for($i=0; $i < count($_FILES['image_upload']['name']); $i++){
+		if(isset($_FILES['image_upload']['name'][$i])){
+			if(in_array($_FILES['image_upload']['type'][$i], $file_allowed, true)):
+			$fileext = explode('.', $_FILES['image_upload']['name'][$i]);
+			$file_ext = strtolower(end($fileext));
+			
+			$new_name = date("YmdHms").'_'.rand(100, 999);
+			$new_file_name = $new_name.'.'.$file_ext;
+			
+			$file_path = ROOT.'media/files/'.$new_file_name;
+			move_uploaded_file($_FILES['image_upload']['tmp_name'][$i], $file_path);
+			
+			if(($file_ext == 'gif')||($file_ext == 'png')){
+				convert_to_jpg($file_path, ROOT.'media/files/'.$new_name.'.jpg', $file_ext);
+				$new_file_name = $new_name.'.jpg';
+				un_link($file_path);
+			}
+			
+			mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."site_part` WHERE `atm_id`='$atm_id' AND `from`='$atms->from_siteid' AND `to`='$atms->to_siteid' AND `barcode`='".$barcode[$i]."' AND `serial_no`='".$serial_no[$i]."'");
+			
+			mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."site_part` (`atm_id`, `from`, `to`, `name`, `detail`, `barcode`, `serial_no`, `qty`, `uom`, `note`, `material_type`, `files`, `timelog`) VALUES ('$atm_id', '$atms->from_siteid', '$atms->to_siteid', '".$desc[$i]."', '".$ori_brand[$i]."', '".$barcode[$i]."', '".$serial_no[$i]."', '".$qty[$i]."', '".$uom[$i]."', '|".$note[$i]."', '".$material_type[$i]."', '$new_file_name', '".time()."')");
+			
+			$sent = true;
+			endif;
+		}
+	}
+	
+	if($sent){
+		mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atm` SET `atf_date`='$atf_date', `fl_barcode`=1, `order_wh`=3, `fl_reject`=0 WHERE `atm_id`='$atm_id' AND `fl_approve`=0") or die(returnjson("failed", "Sorry, could not execute Status query"));
+		echo returnjson("success", "Submit barcode part successfully");
+	}
+	else echo returnjson("failed", "Unknown error from server");
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

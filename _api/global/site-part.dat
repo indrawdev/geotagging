@@ -1,0 +1,35 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['site_id']) $site_id=strip_tags($_GET['site_id']);
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$site_id) die(returnjson("failed", "Required site_id value"));
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Query = "
+		SELECT `site_part_id`, `id` AS `site_id`, `name`, `detail`, `barcode`, `serial_no`, `qty`, `uom`, `note`, `files`, `fl_active`
+		FROM `".DB_NAME."`.`".DB_PREFIX."site_part`
+		WHERE `id`='$site_id' ORDER BY `name` ASC $Qpage $Qlimit";
+
+echo sql2json($Query);
+
+mysql_close();

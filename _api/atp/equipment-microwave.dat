@@ -1,0 +1,59 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['cell_id']) $cell_id=strip_tags($_POST['cell_id']);
+if($_POST['lac']) $lac=strip_tags($_POST['lac']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['vendor']) $vendor=htmlentities($_POST['vendor']);
+if($_POST['model']) $model=htmlentities($_POST['model']);
+if($_POST['configuration']) $configuration=htmlentities($_POST['configuration']);
+if($_POST['version']) $version=htmlentities($_POST['version']);
+if($_POST['station']) $station=htmlentities($_POST['station']);
+if($_POST['frequency']) $frequency=htmlentities($_POST['frequency']);
+if($_POST['link']) $link=htmlentities($_POST['link']);
+if($_POST['capacity']) $capacity=htmlentities($_POST['capacity']);
+if($_POST['date']) $date=strip_tags($_POST['date']);
+if($_POST['site_id']) $site_id=strip_tags($_POST['site_id']);
+if($_POST['ip_address']) $ip_address=strip_tags($_POST['ip_address']);
+if($_POST['indosat_name']) $indosat_name=htmlentities($_POST['indosat_name']);
+if($_POST['indosat_nik']) $indosat_nik=htmlentities($_POST['indosat_nik']);
+if($_POST['contractor_name']) $contractor_name=htmlentities($_POST['contractor_name']);
+if($_POST['contractor_nik']) $contractor_nik=htmlentities($_POST['contractor_nik']);
+if($_POST['remark']) $remark=htmlentities($_POST['remark']);
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$cell_id) die(returnjson("failed", "Required cell_id value"));
+
+if(!$lac) die(returnjson("failed", "Required lac value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_form` WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_form` (`atp_id`, `user_id`, `microwave_vendor`, `microwave_model`, `microwave_configuration`, `microwave_version`, `microwave_station`, `microwave_frequency`, `microwave_link`, `microwave_capacity`, `microwave_date`, `microwave_site_id`, `microwave_ip_address`, `microwave_indosat_name`, `microwave_indosat_nik`, `microwave_contractor_name`, `microwave_contractor_nik`, `microwave_remark`) VALUES ('$atp_id', '$user_id', '$vendor', '$model', '$configuration', '$version', '$station', '$frequency', '$link', '$capacity', '$date', '$site_id', '$ip_address', '$indosat_name', '$indosat_nik', '$contractor_name', '$contractor_nik', '$remark')") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `cell_id`='$cell_id', `lac`='$lac' WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Updated query"));
+	include 'fl_done'.DAT;
+	
+	echo returnjson("success", "Submit Equipment Identification successfully");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

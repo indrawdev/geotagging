@@ -1,0 +1,231 @@
+------GET WORK ORDER [GET]
+
+https://indosat-geotaging.com/graph/ss/work-order.if
+
+- status	=> value format: (done|undone)
+- sort		=> value format: (loc|date)
+- latitude
+- longitude
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> Work Order already sorted by current user location.
+
+
+
+
+------SEARCH WORK ORDER [GET]
+
+https://indosat-geotaging.com/graph/ss/search-wo.if
+
+- sort		=> value format: (loc|date)
+- keyword
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+
+
+
+-----GET TASK RESUME [GET]
+
+https://indosat-geotaging.com/graph/ss/task-resume.if
+
+- ss_id
+
+
+
+
+------SUBMIT BOOK [POST]
+
+https://indosat-geotaging.com/graph/ss/book.if
+
+- ss_id
+- user_id
+- token
+
+note:
+=> Book will be reopened if the previous user has exceeded 60 minutes.
+
+
+
+
+------SUBMIT CANCEL BOOK [POST]
+
+https://indosat-geotaging.com/graph/ss/cancel-book.if
+
+- ss_id
+- user_id
+- token
+
+
+
+
+------SUBMIT CHECKIN [POST]
+
+https://indosat-geotaging.com/graph/ss/checkin.if
+
+- ss_id
+- latitude
+- longitude
+- image_upload	=> may require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT FOTO LOGIN SITE SS [POST]
+
+https://indosat-geotaging.com/graph/ss/login-indosat-foto.if
+
+- ss_id
+- user_id	=> `user_id` user Indosat
+- image_upload
+
+
+
+
+------GET DETAIL [GET]
+
+https://indosat-geotaging.com/graph/ss/info.if
+
+- ss_id
+
+
+
+
+------SUBMIT SCOPE [POST]
+
+https://indosat-geotaging.com/graph/ss/scope.if
+
+- ss_id
+- scope_id
+- user_id
+- token
+
+note:
+=> `scope_id` can submit like array: `scope_id[]`
+	1 = CME
+	2 = Mini CME
+	3 = Transmission
+	4 = RAN ATP
+
+
+
+
+------GET QUEST ITEM ID [GET]
+
+https://indosat-geotaging.com/graph/ss/quest-item-id.if
+
+
+
+
+------SUBMIT QUEST FORM [POST]
+
+https://indosat-geotaging.com/graph/ss/quest-form.if
+
+- ss_id
+- user_id
+- token
+- item_id
+- planned => kosongkan value jika jenis item radio 
+- actual	=> kosongkan value jika jenis item radio
+- result	=> jika radio (OK|NOK|N/A), jika jenis item adalah free teks maka isi dengan value: OK
+
+note:
+=> `item_id` can submit like array: `item_id[]`
+=> `planned` can submit like array: `planned[]`
+=> `actual` can submit like array: `actual[]`
+=> `result` can submit like array: `result[]`
+
+
+
+
+------GET INSTALLATION PHOTO ID [GET]
+
+https://indosat-geotaging.com/graph/ss/installation-photo-id.if
+
+
+
+
+------SUBMIT INSTALLATION PHOTO [POST]
+
+https://indosat-geotaging.com/graph/ss/installation-photo.if
+
+- ss_id
+- user_id
+- token
+- photo_id
+- image_upload
+- image_desc	=> (latitude|longitude|lac|cell_id)
+- comment
+
+note:
+=> `photo_id` can submit like array: `photo_id[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT PUNCHLIST PHOTO [POST]
+
+https://indosat-geotaging.com/graph/ss/punchlist-photo.if
+
+- ss_id
+- user_id
+- token
+- photo_title
+- image_upload
+- image_desc	=> (latitude|longitude|lac|cell_id)
+- comment
+
+note:
+=> `photo_title` can submit like array: `photo_title[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------GET MANDATORY OF INSTALLATION PHOTO ID [GET]
+
+https://indosat-geotaging.com/graph/ss/mandatory-of-installation-photo.if
+
+
+
+
+------SUBMIT SITE SUMMARY [POST]
+
+https://indosat-geotaging.com/graph/ss/site-summary.if
+
+- ss_id
+- user_id
+- token
+- date			=> format (Y-m-d), contoh : '1945-08-17'
+- arrival_time		=> format (H:i), contoh : '19:30'
+- departure_time	=> format (H:i), contoh : '19:30'
+- ran_vendor
+- ran_vendor_team_lead
+- mobile_no
+- sub_contractor
+- sub_contractor_team_lead
+- agreed_date		=> format (Y-m-d), contoh : '1945-08-17'

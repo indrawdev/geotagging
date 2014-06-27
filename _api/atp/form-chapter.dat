@@ -1,0 +1,112 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['chapter']) $chapter=$_POST['chapter'];
+if($_POST['quest']) $quest=$_POST['quest'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if(!$quest) die(returnjson("failed", "Required quest value"));
+
+if($chapter){
+	$chapter_allowed = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20');
+	if(!in_array($chapter, $chapter_allowed, true)) die(returnjson('failed', 'Invalid chapter value'));
+	
+	$chapter_upload = array('2', '4');
+	if(in_array($chapter, $chapter_upload, true)){
+		if($_FILES['image_upload']['name']) $file_name=$_FILES['image_upload']['name'];
+		
+		if(!$file_name) die(returnjson("failed", "Required image_upload value"));
+		
+		$file_type=$_FILES['image_upload']['type'];
+		$file_loc=$_FILES['image_upload']['tmp_name'];
+	}
+	
+}
+else die(returnjson('failed', 'Required chapter value'));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$field = 'fl_chapter_'.$chapter;
+	
+	$Qtasking = mysql_query("SELECT `$field` FROM `".DB_NAME."`.`".DB_PREFIX."atp` WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Tasking query"));
+	if(mysql_num_rows($Qtasking)):
+	
+	$tasking = mysql_fetch_object($Qtasking);
+	if($tasking->$field){
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."atp_chapter` WHERE `atp_id`='$atp_id' AND `user_id`='$user_id' AND `chapter`='$chapter'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	}
+	else $updated="`fl_quest`=`fl_quest`+1, `$field`='1'";
+
+	if($file_name){
+		$file_allowed = array('image/gif', 'image/png', 'image/x-png', 'image/jpeg', 'image/pjpeg', 'application/octet-stream');
+		if(in_array($file_type, $file_allowed, true)){
+			$fileext = explode('.', $file_name);
+			$file_ext = strtolower(end($fileext));
+			
+			$new_name = date("YmdHms").'_'.rand(100, 999);
+			$new_file_name = $new_name.'.'.$file_ext;
+			
+			$file_path = ROOT.'media/files/'.$new_file_name;
+			move_uploaded_file($file_loc, $file_path);
+			
+			if(($file_ext == 'gif')||($file_ext == 'png')){
+				convert_to_jpg($file_path, ROOT.'media/files/'.$new_name.'.jpg', $file_ext);
+				$new_file_name = $new_name.'.jpg';
+				un_link($file_path);
+			}
+			
+		}
+		else die(returnjson('failed','Invalid image_upload extention'));
+		
+		if($tasking->$field) mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."attachment` WHERE `user_id`='$user_id' AND `table`='atp_chapter' AND `idx`='$chapter'") or die(returnjson("failed", "Sorry, could not execute Delete query"));
+	}
+	
+	for($i=0; $i < count($quest); $i++){
+		if(!empty($quest[$i])):
+		$questexplode=explode('|', $quest[$i]);
+		$multi_quest = "('$atp_id', '$user_id', '$chapter', '".$questexplode[0]."', '".$questexplode[1]."'), ".$multi_quest;
+		endif;
+	}
+	
+	$multi_quest=str_replace('), z', ');', $multi_quest.'z');
+	
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."atp_chapter` (`atp_id`, `user_id`, `chapter`, `no_chapter`, `content`) VALUES $multi_quest") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+	
+	if(mysql_affected_rows()){
+		if($new_file_name):
+		
+		$last=mysql_query("SELECT LAST_INSERT_ID() AS `atp_chapter_id`");
+		$last_log=mysql_fetch_object($last);
+		
+		mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `timelog`) VALUES ('$user_id', 'atp_chapter', '$last_log->atp_chapter_id', '$new_file_name', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+		endif;
+		
+		if($updated) include 'fl_done'.DAT;
+		
+		echo returnjson("success", "Submit Chapter $chapter successfully");
+	}
+	else echo returnjson("failed", "Unknown error from server");
+	
+	else: echo returnjson("failed", "This task was canceled from the server"); endif;
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

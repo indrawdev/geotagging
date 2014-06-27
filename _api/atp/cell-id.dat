@@ -1,0 +1,35 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['cell_id']) $cell_id=$_POST['cell_id'];
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$cell_id) die(returnjson("failed", "Required cell_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `cell_ids`='$cell_id' WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+	if(mysql_affected_rows()) echo returnjson("success", "Submit cell_id successfully"); else echo returnjson("failed", "Unknown error from server");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

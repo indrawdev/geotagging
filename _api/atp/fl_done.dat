@@ -1,0 +1,14 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `fl_quest`=1, `fl_done`=1, `order_supervisor`=3 WHERE `atp_id`='$atp_id' AND `fl_approve`=0") or die(returnjson("failed", "Sorry, could not execute Update query"));
+
+/*$Qtask = mysql_query("SELECT `part_id` FROM `".DB_NAME."`.`".DB_PREFIX."part` WHERE `table`='atp' AND `idx`='$atp_id'");
+$Qdone = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp_part' AND `idx_main`='$atp_id'");
+
+$count=mysql_num_rows($Qtask) - mysql_num_rows($Qdone);
+if($count==0){
+	$Qquest = mysql_query("SELECT `fl_quest` FROM `".DB_NAME."`.`".DB_PREFIX."atp` WHERE `atp_id`='$atp_id'");
+	$quest = mysql_fetch_object($Qquest);
+	if($quest->fl_quest==79) mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `fl_active`='1' WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Flag query"));
+}*/

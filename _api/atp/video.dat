@@ -1,0 +1,48 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+if($_POST['atp_id']) $atp_id=strip_tags($_POST['atp_id']);
+if($_POST['cell_id']) $cell_id=strip_tags($_POST['cell_id']);
+if($_POST['phone_number']) $phone_number=strip_tags($_POST['phone_number']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if(!$_FILES['video_upload']['name']) die(returnjson("failed", "Required video_upload value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='atp' AND `idx`='$atp_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+
+if(mysql_num_rows($Qcheck)){
+	
+	$temp_arr = explode('.', $_FILES['video_upload']['name']);
+	$file_ext = array_pop($temp_arr);
+	$file_ext = trim($file_ext);
+	$file_ext = strtolower($file_ext);
+	$file_name = date("YmdHms").'_'.rand(100, 999).'.'.$file_ext;
+	$file_path = ROOT.'media/video/'.$file_name;
+	move_uploaded_file($_FILES['video_upload']['tmp_name'], $file_path);
+	mysql_query("INSERT INTO `".DB_NAME."`.`".DB_PREFIX."attachment` (`user_id`, `table`, `idx`, `files`, `note`, `desc`, `timelog`) VALUES ('$user_id', 'atp_video', '$atp_id', '$file_name', '$phone_number', '$cell_id', '".time()."')") or die(returnjson("failed", "Sorry, could not execute Attachment query"));
+	
+	if(mysql_affected_rows()){
+		mysql_query("UPDATE `".DB_NAME."`.`".DB_PREFIX."atp` SET `fl_video_call`=1 WHERE `atp_id`='$atp_id'") or die(returnjson("failed", "Sorry, could not execute Update query"));
+		echo returnjson("success", "Submit file successfully");
+	}
+	else echo returnjson("failed", "Unknown error from server");
+	
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

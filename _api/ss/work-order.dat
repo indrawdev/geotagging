@@ -1,0 +1,81 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['latitude']) $latitude=strip_tags($_GET['latitude']);
+if($_GET['longitude']) $longitude=strip_tags($_GET['longitude']);
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+if($_GET['status']) $status=$_GET['status'];
+if($_GET['sort']) $sort=$_GET['sort'];
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$latitude || !$longitude) die(returnjson("failed", "Required latitude and longitude value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($status){
+	$status_allowed = array('done', 'undone');
+	if(!in_array($status, $status_allowed, true)) die(returnjson('failed', 'Invalid status value'));
+}
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($status){
+	if($status == 'done') $fl_done = "AND a.`order_pmisat`=1"; else $fl_done = "AND a.`order_pmisat` <> 1";
+}
+
+if($sort == 'date'){
+	$Query = "
+		SELECT a.`task_id` AS `ss_id`, a.`fl_type` AS `ss_type`, a.`neid`, b.`vendor_id`, a.`task_title` AS `title`, d.`id` AS `site_id`, d.`name` AS `destination`, d.`address`, d.`latitude`, d.`longitude`, a.`expired` AS `time_task`, a.`date_created` AS `timelog`, e.`user_id` AS `booked_uid`, e.`timelog` AS `booked_timelog`, f.`user_id` AS `checkin_uid`, f.`timelog` AS `checkin_timelog`, CASE a.`order_pmisat` WHEN 1 THEN '1' ELSE '0' END AS `fl_done`, a.`fl_reject`
+		FROM `".DB_NAME."`.`ss_task` a
+		JOIN `".DB_NAME."`.`it_user` b ON b.`user_id`=a.`user_pmvendor`
+		JOIN `".DB_NAME."`.`it_site` d ON d.`site_id`=a.`site_id`
+		LEFT JOIN `".DB_NAME."`.`it_book` e ON e.`idx`=a.`task_id` AND e.`table`='ss'
+		LEFT JOIN `".DB_NAME."`.`it_checkin` f ON f.`idx`=a.`task_id` AND f.`table`='ss'
+		JOIN `".DB_NAME."`.`it_user` g ON g.`user_id`='$user_id'
+		WHERE a.`fl_status`=1 $fl_done AND a.`vendor_id`=g.`vendor_id` AND a.`user_engineer` IN('$user_id', '0')
+		ORDER BY DATE_FORMAT(a.`expired`, '%d-%m-%Y') ASC $Qpage $Qlimit
+	";
+	//JOIN `".DB_NAME."`.`it_network` c ON c.`neid`=a.`neid`
+	//JOIN `".DB_NAME."`.`it_site` d ON d.`id`=c.`id`
+}else{
+	$Query = "
+		SELECT a.`task_id` AS `ss_id`, a.`fl_type` AS `ss_type`, a.`neid`, b.`vendor_id`, a.`task_title` AS `title`, d.`id` AS `site_id`, d.`name` AS `destination`, d.`address`, d.`latitude`, d.`longitude`, a.`expired` AS `time_task`, a.`date_created` AS `timelog`, e.`user_id` AS `booked_uid`, e.`timelog` AS `booked_timelog`, f.`user_id` AS `checkin_uid`, f.`timelog` AS `checkin_timelog`, CASE a.`order_pmisat` WHEN 1 THEN '1' ELSE '0' END AS `fl_done`, a.`fl_reject`
+		FROM `".DB_NAME."`.`ss_task` a
+		JOIN `".DB_NAME."`.`it_user` b ON b.`user_id`=a.`user_pmvendor`
+		JOIN `".DB_NAME."`.`it_site` d ON d.`site_id`=a.`site_id`
+		LEFT JOIN `".DB_NAME."`.`it_book` e ON e.`idx`=a.`task_id` AND e.`table`='ss'
+		LEFT JOIN `".DB_NAME."`.`it_checkin` f ON f.`idx`=a.`task_id` AND f.`table`='ss'
+		JOIN `".DB_NAME."`.`it_user` g ON g.`user_id`='$user_id'
+		WHERE a.`fl_status`=1 $fl_done AND a.`vendor_id`=g.`vendor_id` AND a.`user_engineer` IN('$user_id', '0')
+		ORDER BY 6371 * ACOS((SIN(PI()* $latitude /180)*SIN(PI()* d.`latitude`/180)) + (COS(PI()* $latitude /180)*COS(PI()* d.`latitude`/180)*COS(PI()* d.`longitude`/180-PI()* $longitude /180))) $Qpage $Qlimit
+	";
+	//JOIN `".DB_NAME."`.`it_network` c ON c.`neid`=a.`neid`
+	//JOIN `".DB_NAME."`.`it_site` d ON d.`id`=c.`id`
+}
+
+echo sql2json($Query);
+
+mysql_close();

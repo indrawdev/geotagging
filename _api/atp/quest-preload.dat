@@ -1,0 +1,33 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['atp_id']) $atp_id=strip_tags($_GET['atp_id']);
+if($_GET['type']) $type=$_GET['type'];
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+
+if(!$atp_id) die(returnjson("failed", "Required atp_id value"));
+
+if($type){
+	$type_allowed = array('chapter', 'subchapter');
+	if(!in_array($type, $type_allowed, true)) die(returnjson('failed', 'Invalid type value'));
+}
+else die(returnjson('failed', 'Required type value'));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+if($type == 'chapter') $Query = "SELECT CONCAT(`chapter`, '|No|', `no_chapter`, '|', `content`) AS `content` FROM `".DB_NAME."`.`".DB_PREFIX."atp_chapter` WHERE `atp_id`='$atp_id' ORDER BY `chapter`, LENGTH(REPLACE(`no_chapter`, '1.6.1', '1.6')), (`no_chapter`+0) ASC"; else $Query = "SELECT REPLACE(`content`, '|Yes|', '|No|') AS `content` FROM `".DB_NAME."`.`".DB_PREFIX."atp_subchapter` WHERE `atp_id`='$atp_id' ORDER BY `chapter`, LENGTH(`no_chapter`), (`no_chapter`+0), `subno_chapter_order` ASC";
+
+echo sql2json($Query);//AND `user_id`='$user_id' 
+
+mysql_close();

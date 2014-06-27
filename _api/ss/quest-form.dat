@@ -1,0 +1,50 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_POST) die(returnjson('failed','Unknown method'));
+
+function amankan($var){ $var = str_replace(array("'", '"'), array("\'", "\""), $var); return $var; }
+
+if($_POST['ss_id']) $ss_id=strip_tags($_POST['ss_id']);
+if($_POST['user_id']) $user_id=strip_tags($_POST['user_id']);
+if($_POST['token']) $token=$_POST['token'];
+if($_POST['item_id']) $item_id=$_POST['item_id'];
+if($_POST['planned']) $planned=$_POST['planned'];
+if($_POST['actual']) $actual=$_POST['actual'];
+if($_POST['result']) $result=$_POST['result'];
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+//logs
+//mysql_query("INSERT INTO `".DB_NAME."`.`logs` (`teks`, `file`) VALUES ('".print_r($_POST, true)."', '".print_r($_FILES, true)."')") or die(returnjson("failed", "Sorry, could not execute Insert Logs query"));
+
+$Qcheck = mysql_query("SELECT `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."checkin` WHERE `table`='ss' AND `idx`='$ss_id' AND `user_id`='$user_id'") or die(returnjson("failed", "Sorry, could not execute Check query"));
+if(mysql_num_rows($Qcheck)){
+	
+	for($i=0; $i < count($item_id); $i++){
+		if($planned[$i] == "") $planned[$i] = "NULL"; else $planned[$i] = "'".amankan($planned[$i])."'";
+		if($actual[$i] == "") $actual[$i] = "NULL"; else $actual[$i] = "'".amankan($actual[$i])."'";
+		mysql_query("DELETE FROM `ss_task_item` WHERE `task_id`='$ss_id' AND `item_id`='".$item_id[$i]."'");
+		mysql_query("INSERT INTO `ss_task_item` (`task_id`, `item_id`, `planned`, `actual`, `result`) VALUES ('$ss_id', '".$item_id[$i]."', (SELECT IF((SELECT `free_text` FROM `ss_items` WHERE `item_id`='".$item_id[$i]."')=1, ".$planned[$i].", NULL)), (SELECT IF((SELECT `free_text` FROM `ss_items` WHERE `item_id`='".$item_id[$i]."')=1, ".$actual[$i].", NULL)), (SELECT IF((SELECT `free_text` FROM `ss_items` WHERE `item_id`='".$item_id[$i]."')=1, (SELECT IF(REPLACE(".$actual[$i].", ' ', '')=REPLACE(".$planned[$i].", ' ', ''), 'OK', 'NOK')), '".$result[$i]."')))") or die(returnjson("failed", "Sorry, could not execute Insert query"));
+		
+		/*mysql_query("
+			INSERT INTO `ss_task_item` (`task_id`, `item_id`, `actual`, `result`) VALUES ('$ss_id', '".$item_id[$i]."', (SELECT IF('".$actual[$i]."'='', NULL, '".$actual[$i]."')), (SELECT IF(('".$result[$i]."'='OK') OR ('".$result[$i]."'='NOK') OR ('".$result[$i]."'='N/A'), '".$result[$i]."', IF('".$actual[$i]."'=(SELECT `planned` FROM `ss_items` WHERE `item_id`='".$item_id[$i]."'), 'OK', 'NOK'))))
+		") or die(returnjson("failed", "Sorry, could not execute Insert query"));*/
+	}
+	
+	mysql_query("UPDATE `ss_task` SET `order_pmvendor`=3, `fl_reject`=0 WHERE `task_id`='$ss_id' AND `order_pmvendor`=0");
+	echo returnjson("success", "Submit quest successfully");
+}
+else echo returnjson("failed", "Please checkin first");
+
+mysql_close();

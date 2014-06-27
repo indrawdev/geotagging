@@ -1,0 +1,25 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['ss_id']) $ss_id=strip_tags($_GET['ss_id']);
+
+if(!$ss_id) die(returnjson("failed", "Required ss_id value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo sql2json("
+	SELECT a.`task_id` AS `ss_id`, b.`vendor_id`, a.`task_title` AS `title`, d.`id`, d.`name`, d.`address`, d.`city`, d.`province`, d.`latitude`, d.`longitude`, a.`expired` AS `time_task`, a.`date_created` AS `timelog`, e.`user_id` AS `booked_uid`, e.`timelog` AS `booked_timelog`, e.`fl_active` AS `check_in`
+	FROM `".DB_NAME."`.`ss_task` a
+	JOIN `".DB_NAME."`.`it_user` b ON b.`user_id`=a.`user_pmvendor`
+	JOIN `".DB_NAME."`.`it_site` d ON d.`site_id`=a.`site_id`
+	LEFT JOIN `".DB_NAME."`.`it_book` e ON e.`idx`=a.`task_id` AND e.`table`='ss'
+	WHERE a.`task_id`='$ss_id'
+", true);
+
+//JOIN `".DB_NAME."`.`it_network` c ON c.`neid`=a.`neid`
+//JOIN `".DB_NAME."`.`it_site` d ON d.`id`=c.`id`
+
+mysql_close();

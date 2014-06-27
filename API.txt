@@ -1,0 +1,815 @@
+
+------MASTER UPDATE [GET]
+
+https://indosat-geotaging.com/graph/global/updater.if
+
+note:
+=> url file: https://indosat-geotaging.com/media/apps/___file___
+
+
+
+
+------LOGIN [POST]
+
+https://indosat-geotaging.com/graph/user/login.if
+
+- username
+- password
+- imei
+
+
+
+
+------LOGIN SITE [POST]
+
+https://indosat-geotaging.com/graph/user/login-indosat.if
+
+- username
+- password
+
+
+
+
+------SUBMIT FOTO LOGIN SITE [POST]
+
+https://indosat-geotaging.com/graph/atp/login-indosat-foto.if
+
+- atp_id
+- user_id	=> `user_id` user Indosat
+- image_upload
+
+
+
+
+------GET IMEI [GET]
+
+https://indosat-geotaging.com/graph/global/imei.if
+
+paging:
+
+- limit
+- page
+
+
+
+
+------GET SITE ID [GET]
+
+https://indosat-geotaging.com/graph/global/site.if
+
+- latitude
+- longitude
+
+paging:
+
+- limit
+- page
+
+note:
+=> Site ID already sorted by current user location.
+
+
+
+
+------GET SITE PART [GET]
+
+https://indosat-geotaging.com/graph/global/site-part.if
+
+- site_id
+
+paging:
+
+- limit
+- page
+
+
+
+
+------GET MASTER BARCODE [GET]
+
+https://indosat-geotaging.com/graph/global/master-barcode.if
+
+- site_id
+
+
+
+
+------SUBMIT SITE BARCODE [POST]
+
+https://indosat-geotaging.com/graph/global/site-barcode.if
+
+- barcode
+- serial_no
+- qty
+- uom
+- name
+- detail
+- note
+- image_upload	=> require image upload (gif, png, jpg)
+- site_id
+- user_id
+- token
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `note` can submit like array: `note[]`
+=> `detail` can submit like array: `detail[]`
+=> `name` can submit like array: `name[]`
+=> `uom` can submit like array: `uom[]`
+=> `qty` can submit like array: `qty[]`
+=> `serial_no` can submit like array: `serial_no[]`
+=> `barcode` can submit like array: `barcode[]`
+
+
+
+
+------SUBMIT SITE SCAN BARCODE [POST]
+
+https://indosat-geotaging.com/graph/global/site-scan-barcode.if
+
+- site_part_id
+- barcode
+- serial_no
+- image_upload
+- site_id
+- user_id
+- token
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `serial_no` can submit like array: `serial_no[]`
+=> `barcode` can submit like array: `barcode[]`
+=> `site_part_id` can submit like array: `site_part_id[]`
+
+
+
+
+------GET WORK ORDER ATP [GET]
+
+https://indosat-geotaging.com/graph/atp/work-order.if
+
+- brands	=> value format: (ericsson2G,ericsson3G,zte2G,zte3G,ericssonMicrowave,zteMicrowave,atpPowersupply,atpFilter,miniMCE)
+- status	=> value format: (done|undone)
+- sort	=> value format: (loc|date)
+- latitude
+- longitude
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> `brands` value separate by coma (,)
+=> Work Order already sorted by current user location.
+
+
+
+
+------SEARCH WORK ORDER ATP [GET]
+
+https://indosat-geotaging.com/graph/atp/search-wo.if
+
+- brands	=> value format: (ericsson2G,ericsson3G,zte2G,zte3G,ericssonMicrowave,zteMicrowave,atpPowersupply,atpFilter,miniMCE)
+- sort	=> value format: (loc|date)
+- keyword
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> `brands` value separate by coma (,)
+
+
+
+
+-----GET ATP TASK RESUME [GET]
+
+https://indosat-geotaging.com/graph/atp/task-resume.if
+
+- atp_id
+
+note:
+=> `boq_file` and `designpack_file URL: https://indosat-geotaging.com/media/files/___filename___
+
+
+
+
+------SUBMIT COMMENT ATTACHMENT BOQ / DESIGN PACK [POST]
+
+https://indosat-geotaging.com/graph/atp/attachment-comment.if
+
+- message
+- type		=> value format: (boq | designpack)
+- atp_id
+- user_id
+- token
+
+
+
+
+------SUBMIT BOOK ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/book.if
+
+- atp_id
+- user_id
+- token
+
+note:
+=> Book will be reopened if the previous user has exceeded 60 minutes.
+
+
+
+
+------SUBMIT CANCEL BOOK ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/cancel-book.if
+
+- atp_id
+- user_id
+- token
+
+
+
+
+------SUBMIT CHECKIN ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/checkin.if
+
+- atp_id
+- latitude
+- longitude
+- image_upload	=> may require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT VOICE ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/voice.if
+
+- atp_id
+- voice_upload
+- phone_number
+- cell_id
+- user_id
+- token
+
+
+
+
+------SUBMIT VIDEO ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/video.if
+
+- atp_id
+- video_upload
+- phone_number
+- cell_id
+- user_id
+- token
+
+
+
+
+------SUBMIT VIDEO RECORD ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/video-record.if
+
+- atp_id
+- video_record
+- user_id
+- token
+
+
+
+
+------SUBMIT CELL ID ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/cell-id.if
+
+- atp_id
+- cell_id	=> value format: (123|456|789)
+- user_id
+- token
+
+note:
+=> separate by | (garis lurus)
+
+
+
+
+------GET DETAIL ATP [GET]
+
+https://indosat-geotaging.com/graph/atp/info.if
+
+- atp_id
+
+
+
+
+------GET PRELOAD QUEST FORM ATP [GET]
+
+https://indosat-geotaging.com/graph/atp/quest-preload.if
+
+- atp_id
+- type	=> value format: (chapter|subchapter)
+- user_id
+- token
+
+
+
+
+------SUBMIT FREE PHOTO ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/free-photo.if
+
+- atp_id
+- user_id
+- token
+- image_upload
+- image_desc	=> (lat|lon|lac|cell_id|timestamp)
+- comment	=> maxlength 200char
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT INSTALLATION PHOTO ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/installation-photo.if
+
+- atp_id
+- user_id
+- token
+- image_upload
+- image_desc	=> (lat|lon|lac|cell_id|timestamp)
+- title
+- comment	=> maxlength 200char
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `title` can submit like array: `title[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT EQUIPMENT IDENTIFICATION FORM ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/equipment-identification.if
+
+- atp_id
+- user_id
+- cell_id
+- lac
+- token
+- type			=> value format: (RBS 3101|RBS 3102|RBS 3103)
+- conf_rbs		=> value format: (null|indoor)
+- conf_type		=> value format: (wcdma|gsm)
+- conf_installed	=> value format: (null|teks)
+- conf_activated	=> value format: (null|teks)
+- conf_serial		=> value format: (null|teks)
+- multiple_site
+- no_cabinet
+- ip_address
+- soft_version
+- site_profile
+- rbs_topology
+- doc_ref
+- outstanding		=> value format: (yes / no)
+- time_spent
+
+note:
+=> separate by | (garis lurus)
+=> `multiple_site` can submit like array: `multiple_site[]`
+
+
+
+
+------SUBMIT MICROWAVE EQUIPMENT FORM ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/equipment-microwave.if
+
+- atp_id
+- user_id
+- cell_id
+- lac
+- token
+
+- vendor
+- model
+- configuration
+- version
+- station
+- frequency
+- link
+- capacity		=> value format: (null|teks)
+- date
+- site_id
+- ip_address		=> value format: (null|teks)
+- indosat_name
+- indosat_nik
+- contractor_name
+- contractor_nik
+- remark
+
+note:
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT QUEST FORM ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/quest-form.if
+
+- atp_id
+- user_id
+- token
+//- page
+//- comment	=> maxlength 200char
+- image_desc	=> (lat|lon|lac|cell_id|timestamp)
+- image_upload	=> may require image upload (gif, png, jpg)
+- quest		=> value format:
+		-> Chapter: (no_chapter|image_Yes_No|id_chapter|answer) <==> (1|No|1.1|Not OK)
+		-> SubChapter: (no_chapter@no_subchapter|image_Yes_No|id_subchapter|answer|dst..) <==> (5@5.1|Yes|1|Remark|dst..)
+
+note:
+=> `quest` can submit like array: `quest[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `image_upload` can submit like array: `image_upload[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT NOTE FORM ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/note-form.if
+
+- atp_id
+- user_id
+- token
+- note	=> value format: (chapter|name|date|desc)
+
+note:
+=> `note` can submit like array: `note[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT CHAPTER QUEST FORM ATP [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atp/form-chapter.if
+
+- atp_id
+- user_id
+- token
+- chapter	=> chapter (1-20)
+- quest		=> value format: (1.1-20.3,answer) <==> (1.1|Not OK)
+- image_upload	=> may require image upload (gif, png, jpg)
+
+note:
+=> `quest` can submit like array: `quest[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT SUB CHAPTER QUEST FORM ATP [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atp/form-subchapter.if
+
+- atp_id
+- user_id
+- token
+- chapter	=> chapter (1-20)
+- sub_chapter	=> chapter (5.1 dst)
+- quest		=> value format: (1|OK|Remark dst)
+
+note:
+=> `quest` can submit like array: `quest[]`
+=> separate by | (garis lurus)
+
+
+
+
+------SUBMIT ANSWER QUEST FORM ATP [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atp/answer-quest.if
+
+- atp_id
+- cell_id
+- lac
+- quest		=> value format: (quest_id,answerA,answerB) <==> (1,Yes,N/A)
+- image_upload	=> may require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> `quest` can submit like array: `quest[]`
+
+
+
+
+------GET PART ORDER ATP [GET]
+
+https://indosat-geotaging.com/graph/atp/part-order.if
+
+- atp_id
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Part Order already sorted by current user location.
+
+
+
+
+------CHECK BARCODE ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/check-barcode.if
+
+- atp_id
+- part_id
+- barcode
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Will be rejected by server if barcode number not equal and the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT CHECKIN PART ATP [POST]
+
+https://indosat-geotaging.com/graph/atp/checkin-part.if
+
+- atp_id
+- part_id
+- note		=> optional
+- image_upload	=> may require image upload (gif, png, jpg)
+- image_note
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_note` can submit like array: `image_note[]`
+
+
+
+
+------GET WORK ORDER ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/work-order.if
+
+- status	=> value format: (done|undone)
+- latitude
+- longitude
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+note:
+=> Work Order already sorted by current user location.
+
+
+
+
+------SEARCH WORK ORDER ATM [GET]
+
+https://indosat-geotaging.com/graph/atm/search-wo.if
+
+- keyword
+- user_id
+- token
+
+paging:
+
+- limit
+- page
+
+
+
+
+-----GET ATM TASK RESUME [GET]
+
+https://indosat-geotaging.com/graph/atm/task-resume.if
+
+- atm_id
+
+
+
+
+------SUBMIT BOOK ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/book.if
+
+- atm_id
+- user_id
+- token
+
+note:
+=> Book will be reopened if the previous user has exceeded 60 minutes.
+
+
+
+
+------SUBMIT CANCEL BOOK ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/cancel-book.if
+
+- atm_id
+- user_id
+- token
+
+
+
+
+------SUBMIT FIRST CHECKIN ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/checkin-st.if
+
+- atm_id
+- latitude
+- longitude
+- image_upload	=> may require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+(abort) ------GET PART ORDER ATM [GET] ____<<_____________Rest in Peace. Refer to: _____________>>____ ------GET SITE PART [GET]
+
+https://indosat-geotaging.com/graph/atm/part-order.if
+
+- atm_id
+- user_id
+- token
+
+
+
+
+------FIRST CHECK BARCODE ATM [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atm/check-barcode-st.if
+
+- atm_id
+- part_id
+- barcode
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Will be rejected by server if barcode number not equal and the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT BARCODE ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/barcode.if
+
+- atm_id
+- type			=> value: (dismantle|redeploy)
+- storage
+- reason
+- barcode
+- serial_no
+- qty
+- uom
+- name
+- detail
+- note
+- image_upload	=> require image upload (gif, png, jpg)
+- user_id
+- token
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `note` can submit like array: `note[]`
+=> `detail` can submit like array: `detail[]`
+=> `name` can submit like array: `name[]`
+=> `uom` can submit like array: `uom[]`
+=> `qty` can submit like array: `qty[]`
+=> `serial_no` can submit like array: `serial_no[]`
+=> `barcode` can submit like array: `barcode[]`
+
+
+
+
+------SECOND CHECK BARCODE ATM [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atm/check-barcode-nd.if
+
+- atm_id
+- part_id
+- barcode
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Will be rejected by server if barcode number not equal and the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT CHECKIN PART ATM [POST] ____<<_____________Rest in Peace
+
+https://indosat-geotaging.com/graph/atm/checkin-part.if
+
+- atm_id
+- part_id
+- note		=> optional
+- qty		=> optional
+- image_upload	=> may require image upload (gif, png, jpg)
+- latitude
+- longitude
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT SECOND CHECKIN ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/checkin-nd.if
+
+- atm_id
+- latitude
+- longitude
+- image_upload	=> may require image upload (gif, png, jpg)
+- cell_id
+- lac
+- user_id
+- token
+
+note:
+=> Check In will be rejected by server if the user radius more than 1KM from destination.
+
+
+
+
+------SUBMIT FREE PHOTO ATM [POST]
+
+https://indosat-geotaging.com/graph/atm/free-photo.if
+
+- atm_id
+- user_id
+- token
+- image_upload
+- image_desc	=> (lat|lon|lac|cell_id|timestamp)
+- title
+- comment	=> maxlength 200char
+
+note:
+=> `image_upload` can submit like array: `image_upload[]`
+=> `image_desc` can submit like array: `image_desc[]`
+=> `title` can submit like array: `title[]`
+=> `comment` can submit like array: `comment[]`
+=> separate by | (garis lurus)

@@ -1,0 +1,14 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+echo sql2json("
+	SELECT b.`name` AS `category_name`, a.`photo_id`, a.`name`
+	FROM `ss_photos` a
+	JOIN `ss_photo_category` b ON b.`photo_category_id`=a.`photo_category_id`
+	ORDER BY a.`photo_category_id`, a.`photo_id`
+");
+
+mysql_close();

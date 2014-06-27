@@ -1,0 +1,55 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+if(!$_GET) die(returnjson('failed','Unknown method'));
+
+if($_GET['brands']) $brands=strip_tags($_GET['brands']);
+if($_GET['keyword']) $keyword=$_GET['keyword'];
+if($_GET['user_id']) $user_id=strip_tags($_GET['user_id']);
+if($_GET['token']) $token=$_GET['token'];
+if($_GET['sort']) $sort=$_GET['sort'];
+if($_GET['limit']) $limit=$_GET['limit'];
+if($_GET['page']) $page=$_GET['page'];
+
+if(!$keyword) die(returnjson('failed','Required keyword value')); else $keyword=str_replace(" ", "%", $keyword);
+
+if(!$brands) die(returnjson("failed", "Required brands value"));
+
+if(!$user_id) die(returnjson("failed", "Required user_id value"));
+
+if($limit){
+	if(!ctype_digit($limit)) die(returnjson("failed", "Invalid limit value"));
+	$Qlimit='LIMIT '.$limit;
+}
+
+if($page){
+	if(!$limit) die(returnjson("failed", "Required limit value"));
+	if(!ctype_digit($page)) die(returnjson("failed", "Invalid page value"));
+	$position=($page-1) * $limit;
+	$Qpage="LIMIT $position, $limit";
+	$Qlimit='';
+}
+
+if($token){
+	if($token != get_token($user_id)) die(returnjson("failed", "Invalid token value"));
+}
+else die(returnjson("failed", "Required token value"));
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die(returnjson("failed", "Sorry, could not connect to server"));
+mysql_select_db(DB_NAME) or die(returnjson("failed", "Sorry, could not select database"));
+
+$brand = str_replace(',', "', '", $brands);
+
+$Query = "
+		SELECT a.`atp_id`, a.`brand`, a.`fl_type` AS `atp_type`, b.`id` AS `site_id`, a.`neid`, a.`vendor_id`, a.`title`, b.`name` AS `destination`, b.`address`, b.`latitude`, b.`longitude`, a.`time_task`, a.`timelog`, d.`user_id` AS `booked_uid`, d.`timelog` AS `booked_timelog`, e.`user_id` AS `checkin_uid`, e.`timelog` AS `checkin_timelog`, CASE a.`fl_approve` WHEN 6 THEN '1' ELSE '0' END AS `fl_done`, a.`fl_reject`
+		FROM `".DB_NAME."`.`".DB_PREFIX."atp` a
+		JOIN `".DB_NAME."`.`".DB_PREFIX."site` b ON b.`site_id`=a.`site_id`
+		JOIN `".DB_NAME."`.`".DB_PREFIX."user` c ON c.`user_id`='$user_id'
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."book` d ON d.`idx`=a.`atp_id` AND d.`table`='atp'
+		LEFT JOIN `".DB_NAME."`.`".DB_PREFIX."checkin` e ON e.`idx`=a.`atp_id` AND e.`table`='atp'
+		WHERE a.`fl_status`='1' AND a.`fl_approve` < 6 AND a.`brand` IN('$brand') AND ((a.`vendor_id` IN(c.`vendor_id`, 0) AND a.`user_id`='0') OR (a.`vendor_id` IN(c.`vendor_id`, 0) AND a.`user_id`=c.`user_id`)) AND (a.`title` LIKE '%$keyword%' OR b.`name` LIKE '%$keyword%' OR b.`address` LIKE '%$keyword%')
+		ORDER BY a.`atp_id` DESC $Qpage $Qlimit";
+		
+echo sql2json($Query);//AND a.`fl_active`='0'
+
+mysql_close();

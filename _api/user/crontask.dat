@@ -1,0 +1,16 @@
+<?php
+if(!defined('DEVELOPER'))exit;
+
+mysql_connect(DB_HOST, DB_USER, DB_PASS) or die("failed, Sorry, could not connect to server");
+mysql_select_db(DB_NAME) or die("failed, Sorry, could not select database");
+
+$Qlist = mysql_query(" SELECT `table`, `idx`, `timelog` FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `fl_active`='0'") or die("failed, Sorry, could not execute query");
+
+if(mysql_num_rows($Qlist)){
+	while($list = mysql_fetch_object($Qlist)){
+		if(check_time($list->timelog, 'minutes') > 59)
+		mysql_query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."book` WHERE `table`='$list->table' AND `idx`='$list->idx' AND `fl_active`='0'") or die("failed, Sorry, could not execute Delete query");
+	}
+}
+
+mysql_close();
